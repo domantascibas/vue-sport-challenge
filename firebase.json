@@ -1,0 +1,19 @@
+{
+  "hosting": {
+      "site": "sport-challenge",
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  },
+  "emulators": {
+    "firestore": {
+      "port": "8081"
+    },
+    "hosting": {
+      "port": "5000"
+    }
+  }
+}
