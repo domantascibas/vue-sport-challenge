@@ -22,13 +22,13 @@ export default {
     methods: {
         login: function() {
             firebase.auth().signInWithEmailAndPassword(this.email, this.password)
-            .then(function() {
-                alert('Well done. You are now logged in')
-            })
-            .catch(function(error) {
+            .then(() => {
+                // alert('Well done. You are now logged in')
+                this.$router.replace('home')
+            },
+            (error) => {
                 alert('Oops ' + error.message)
             })
-            // this.$router.replace('home');
         }
     }
 }

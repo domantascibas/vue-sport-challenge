@@ -22,11 +22,12 @@ export default {
     methods: {
         signUp: function() {
             firebase.auth().createUserWithEmailAndPassword(this.email, this.password)
-            .then(function() {
-                alert('Your account has been created !')
+            .then(() => {
+                this.$router.replace('home')
+                // alert('Your account has been created !')
     //   this.alertService.alertPopup('Success', 'Code Updated')
-            })
-            .catch(function(error) {
+            },
+            (error) => {
                 alert('Oops ' + error.code + ' ' + error.message)
             });
         }
