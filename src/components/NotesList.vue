@@ -1,6 +1,6 @@
 <template>
     <div class="list">
-        <input type="text" placeholder="reps">
+        <input type="text" v-model="this.newReps" placeholder="reps">
         <button @click="addWorkout()" class="btn btn-info">+ Workout</button>
         <ul class="list-group">
             <li class="list-group-item"
@@ -21,7 +21,12 @@
 
 export default {
   name: "NoteList",
-  props: ["workouts", "activeNote"],
+  props: ["workouts", "activeNote", "newReps"],
+  data: function() {
+      return {
+          reps: this.newReps
+      }
+  },
   methods: {
     changeNote(index) {
       this.$emit("app-changeNote", index);
