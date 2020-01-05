@@ -1,30 +1,33 @@
 <template>
     <div class="list">
-        <h3>List</h3>
+        <input type="text" placeholder="reps">
+        <button @click="addWorkout()" class="btn btn-info">+ Workout</button>
         <ul class="list-group">
             <li class="list-group-item"
-                v-for="(note, index) in notes"
-                :key="note.index"
+                v-for="(workout, index) in workouts"
+                :key="workout.index"
                 :class="{ 'active': index === activeNote}"
                 @click="changeNote(index)"
                 >
-                <div>{{ note.title }}</div>
+                <p>{{ workout.time.toLocaleString('default', {month: 'short'})}} {{ workout.time.getDate() }} - <b>{{ workout.reps }}</b> reps</p>
             </li>
         </ul>
-        <button @click="addNote()" class="btn btn-info">+ Workout</button>
     </div>
 </template>
  
 <script>
+// var Weekday = new Array("Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday");
+// var Month = new Array("January","February","March","April","May","June","July","August","September","October","November","December");
+
 export default {
   name: "NoteList",
-  props: ["notes", "activeNote"],
+  props: ["workouts", "activeNote"],
   methods: {
     changeNote(index) {
       this.$emit("app-changeNote", index);
     },
-    addNote() {
-      this.$emit("app-addNote");
+    addWorkout() {
+      this.$emit("app-addWorkout");
     }
   }
 };
@@ -33,5 +36,11 @@ export default {
 <style>
 .list {
   margin: 20px;
+}
+ul {
+  list-style-type: none;
+}
+li {    
+    display: block;
 }
 </style>
