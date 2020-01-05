@@ -1,7 +1,7 @@
 {
   "hosting": {
       "site": "sport-challenge",
-    "public": "public",
+    "public": "dist",
     "ignore": [
       "firebase.json",
       "**/.*",
