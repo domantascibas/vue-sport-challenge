@@ -4,7 +4,10 @@
     <AddWorkout msg="Add Workout"/> -->
     <div id="app">
         <!-- <h3>Hi, {{ name }}</h3> -->
-        <h1>{{ repcount }}</h1>
+        <h1>{{ repcount }} / {{ goal }}</h1>
+        <p>Keep going, need {{ Math.floor((goal - repcount) / days_left)}} {{units}}/day to reach your goal!</p>
+        <p>Days left: {{ days_left }}</p>
+        <p>Reps left: {{ goal - repcount }}</p>
         <!-- <NotesList 
           @app-addWorkout="addWorkout"
           @app-changeNote="changeNote"
@@ -13,8 +16,8 @@
           :newReps="newReps"
         /> -->
         <div class="list">
-            <input type="number" v-model="newReps" placeholder="reps">
-            <button @click="addWorkout()" class="btn btn-info">+ Workout</button>
+            <input type="number" v-model="newReps" :placeholder="units">
+            <button @click="addWorkout()" class="btn btn-info">+ {{ units }}</button>
             <ul class="list-group">
                 <li class="list-group-item"
                     v-for="(workout, index) in workouts"
@@ -47,8 +50,13 @@ export default {
         workouts: [],
         index: 0,
         repcount: 0,
+        goal: 0,
         newReps: '',
-        name: ''
+        name: '',
+        units: 'none',
+        challenge_start: 0,
+        challenge_end: 0,
+        days_left: 0
     }),
     methods: {
         logout: function() {
@@ -56,44 +64,32 @@ export default {
                 this.$router.replace('login')
             })
         },
-        // test() {
-        //     fb.db.collection("users").add({
-        //         first: "Alan",
-        //         middle: "Mathison",
-        //         last: "Turing",
-        //         born: 1912
-        //     })
-        //     .then(function(docRef) {
-        //         console.log("Document written with ID: ", docRef.id);
-        //     })
-        //     .catch(function(error) {
-        //         console.error("Error adding document: ", error);
-        //     });
-        // },
         addWorkout() {
-            var now = new Date();
-            this.workouts.unshift({
-                reps: this.newReps,
-                type: "dHzMqPCfpSJJCBEBpJf8",
-                time: now,
-                user: firebase.auth().currentUser.uid,
-            });
-            this.newReps = '';
-            this.index = this.workouts.length - 1;
-            this.repcount += parseInt(this.workouts[this.index].reps)
-            fb.db.collection("workouts").add(this.workouts[this.index])
-            console.log(this.repcount)
+            if (this.newReps == "" || this.newReps == 0) {
+                alert("Enter number of reps")
+            } else {
+                var now = new Date();
+                this.workouts.unshift({
+                    reps: this.newReps,
+                    time: now,
+                    user: firebase.auth().currentUser.uid,
+                });
+                this.newReps = 0
+                this.index = 0
+                this.repcount += parseInt(this.workouts[this.index].reps)
+                fb.db.collection("challenges").doc("knee-crunches-jan").collection("workouts").add(this.workouts[this.index])
+                // console.log(this.repcount)
+            }
         },
         // removeNote() {
-        //     const id = this.notes[this.index].id;
+            //     const id = this.notes[this.index].id;
         //     fb.notesRef.child(id).remove();
         // }
     },
     created() {
         var id = firebase.auth().currentUser.uid;
-        var workoutsRef = fb.db.collection("workouts").where("user", "==", id).orderBy("time", "desc")
-
-        // this.name = 
+        var workoutsRef = fb.db.collection("challenges").doc("knee-crunches-jan").collection("workouts").where("user", "==", id).orderBy("time", "desc");
+        var challengeRef = fb.db.collection("challenges").doc("knee-crunches-jan");
 
         workoutsRef.get().then((querySnapshot) => {
             querySnapshot.forEach((doc) => {
@@ -107,10 +103,20 @@ export default {
 
             for (var i in this.workouts) {
                 this.repcount += parseInt(this.workouts[i].reps)
-                console.log(this.workouts[i].id)
-                console.log(this.workouts[i].time)
+                // console.log(this.workouts[i].id)
+                // console.log(this.workouts[i].time)
             }
-            console.log(this.repcount)
+            // console.log(this.repcount)
+        });
+
+        challengeRef.get().then((doc) => {
+            if (doc.exists) {
+                this.units = doc.data().units
+                this.goal = doc.data().goal
+                this.challenge_start = doc.data().start_date.toDate()
+                this.challenge_end = doc.data().end_date.toDate()
+                this.days_left = Math.floor((this.challenge_end - this.challenge_start) / (24 * 60 * 60 * 1000))
+            }
         });
 
     // /* eslint-disable no-console */
@@ -120,7 +126,7 @@ export default {
     // });
  
     // fb.notesRef.on("child_removed", snapshot => {
-    //   const deletedNote = this.notes.find(note => note.id === snapshot.key);
+        //   const deletedNote = this.notes.find(note => note.id === snapshot.key);
     //   console.log("note was removed: ", deletedNote);
  
     //   const index = this.notes.indexOf(deletedNote);
@@ -129,7 +135,7 @@ export default {
     // });
  
     // fb.notesRef.on("child_changed", snapshot => {
-    //   const updatedNote = this.notes.find(note => note.id === snapshot.key);
+        //   const updatedNote = this.notes.find(note => note.id === snapshot.key);
     //   updatedNote.title = snapshot.val().title;
     //   updatedNote.content = snapshot.val().content;
     //   console.log("note was updated: ", updatedNote);
@@ -141,10 +147,10 @@ export default {
 
 <style>
 .list {
-  margin: 20px;
+    margin: 20px;
 }
 ul {
-  list-style-type: none;
+    list-style-type: none;
 }
 li {    
     display: block;
