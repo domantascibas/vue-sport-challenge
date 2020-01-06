@@ -1,14 +1,14 @@
 <template>
     <div class="list">
-        <input type="text" v-model="this.newReps" placeholder="reps">
+        <input type="number" v-model="this.newReps" placeholder="reps">
         <button @click="addWorkout()" class="btn btn-info">+ Workout</button>
         <ul class="list-group">
             <li class="list-group-item"
                 v-for="(workout, index) in workouts"
                 :key="workout.index"
-                :class="{ 'active': index === activeNote}"
                 @click="changeNote(index)"
                 >
+                <!-- :class="{ 'active': index === activeNote}" -->
                 <p>{{ workout.time.toLocaleString('default', {month: 'short'})}} {{ workout.time.getDate() }} - <b>{{ workout.reps }}</b> reps</p>
             </li>
         </ul>

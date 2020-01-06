@@ -28,3 +28,8 @@ firebase.auth().onAuthStateChanged(() => {
     }
 })
 
+var db = firebase.firestore();
+
+export {
+    db,
+}
