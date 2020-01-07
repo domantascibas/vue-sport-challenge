@@ -29,13 +29,14 @@
             </ul>
         </div>
     </div>
-    <!-- <div>
+    <div>
+        <h3>Leaderboard</h3>
         <ul class="list-group">
-            <li class="list-group-item" v-for="participant  in participants">
-                {{ participant }}
+            <li class="list-group-item" v-for="participant  in participants" :key="participant.index">
+                <p><span v-if="participant.id === uid">&diams; </span><b>{{ participant.reps }} / {{ goal }}</b> {{ participant.name }}<span v-if="participant.id === uid"> &diams;</span></p>
             </li>
         </ul>
-    </div> -->
+    </div>
     <div>
         <h4 v-if="name === ''">Profile</h4>
         <div v-if="name === ''"><p>Name: <input type="text" :placeholder="name" v-model="name"></p></div>
@@ -65,6 +66,7 @@ export default {
         goal: 0,
         newReps: '',
         name: '',
+        uid: '',
         units: 'none',
         challenge_start: 0,
         challenge_end: 0,
@@ -153,9 +155,9 @@ export default {
                 });
             });
 
-            for (var i in this.myWorkouts) {
-                this.repcount += parseInt(this.myWorkouts[i].reps)
-            }
+            // for (var i in this.myWorkouts) {
+            //     this.repcount += parseInt(this.myWorkouts[i].reps)
+            // }
         });
 
         challengeRef.get().then((doc) => {
@@ -181,12 +183,16 @@ export default {
                                 name: this.users[j].name,
                                 reps: repCount
                             })
+                            if (p[i] == firebase.auth().currentUser.uid) {
+                                this.repcount = repCount
+                            }
                         }
                     }
                 }
-                for (var k in this.participants) {
-                    console.log(this.participants[k].id, this.participants[k].name, this.participants[k].reps)
-                }
+                this.participants.sort((a, b) => (a.name < b.name) ? 1 : -1).sort((a, b) => (a.reps < b.reps) ? 1 : -1)
+                // for (var k in this.participants) {
+                //     console.log(this.participants[k].id, this.participants[k].name, this.participants[k].reps)
+                // }
             }
         });
 
@@ -194,6 +200,7 @@ export default {
 
         if (user != null) {
             this.name = user.displayName;
+            this.uid = user.uid;
             // email = user.email;
             // photoUrl = user.photoURL;
             // emailVerified = user.emailVerified;
@@ -244,4 +251,8 @@ ul {
 li {    
     display: block;
 }
+/* .highlight { */
+    /* list-style-type: circle; */
+    /* background-color: #669999; */
+/* } */
 </style>
