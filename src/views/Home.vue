@@ -4,8 +4,9 @@
     <AddWorkout msg="Add Workout"/> -->
     <div id="app">
         <!-- <h3>Hi, {{ name }}</h3> -->
+        <p>Keep going {{ name }}!</p>
         <h1>{{ repcount }} / {{ goal }}</h1>
-        <p>Keep going, need {{ Math.floor((goal - repcount) / days_left)}} {{units}}/day to reach your goal!</p>
+        <p>You need {{ Math.floor((goal - repcount) / days_left)}} {{units}}/day to reach your goal!</p>
         <p>Days left: {{ days_left }}</p>
         <p>Reps left: {{ goal - repcount }}</p>
         <!-- <NotesList 
@@ -29,8 +30,12 @@
             </ul>
         </div>
     </div>
+    <div>
+        <h4 v-if="name === ''">Profile</h4>
+        <div v-if="name === ''"><p>Name: <input type="text" :placeholder="name" v-model="name"></p></div>
+        <button v-if="name === ''" @click="updateProfile">Save</button> <button @click="logout">Logout</button>
+    </div>
     <!-- <button @click="test">test</button> -->
-    <button @click="logout">Logout</button>
   </div>
 </template>
 
@@ -81,6 +86,21 @@ export default {
                 // console.log(this.repcount)
             }
         },
+        updateProfile() {
+            var user = firebase.auth().currentUser;
+
+            user.updateProfile({
+                displayName: this.name,
+                // photoURL: "https://example.com/jane-q-user/profile.jpg"
+                }).then(function() {
+                // Update successful.
+                    // console.log("succes. profile saved")
+                    // console.log(user.displayName)
+                }).catch(function(error) {
+                // An error happened.
+                    alert("error. profile not updated " + error.message)
+            });
+        }
         // removeNote() {
             //     const id = this.notes[this.index].id;
         //     fb.notesRef.child(id).remove();
@@ -118,6 +138,25 @@ export default {
                 this.days_left = Math.floor((this.challenge_end - this.challenge_start) / (24 * 60 * 60 * 1000))
             }
         });
+
+        var user = firebase.auth().currentUser;
+        // var email, photoUrl, uid, emailVerified;
+
+        if (user != null) {
+            this.name = user.displayName;
+            // email = user.email;
+            // photoUrl = user.photoURL;
+            // emailVerified = user.emailVerified;
+            // uid = user.uid;  // The user's ID, unique to the Firebase project. Do NOT use
+                            // this value to authenticate with your backend server, if
+                            // you have one. Use User.getToken() instead.
+        }
+
+        // console.log(this.name)
+        // console.log(email)
+        // console.log(photoUrl)
+        // console.log(emailVerified)
+        // console.log(uid)
 
     // /* eslint-disable no-console */
     // // value = snapshot.val() | id = snapshot.key
