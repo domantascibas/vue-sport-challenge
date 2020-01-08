@@ -98,9 +98,10 @@ export default {
                 this.$router.replace('login')
             })
         },
-        changeNote(index) {
-            console.log(index)
-        },
+        // changeNote(index) {
+        //     index = 0;
+        //     // console.log(index)
+        // },
         addWorkout() {
             if (this.newReps == "" || this.newReps == 0) {
                 alert("Enter number of reps")
