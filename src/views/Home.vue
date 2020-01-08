@@ -1,49 +1,67 @@
 <template>
-  <div class="home">
-    <!-- <LeaderBoard msg="Squat ch allenge"/>
-    <AddWorkout msg="Add Workout"/> -->
-    <div id="app">
-        <!-- <h3>Hi, {{ name }}</h3> -->
-        <p>Keep going {{ name }}!</p>
-        <h1>{{ repcount }} / {{ goal }}</h1>
-        <p>You need {{ Math.floor((goal - repcount) / days_left)}} {{units}}/day to reach your goal!</p>
-        <p>Days left: {{ days_left }}</p>
-        <p>Reps left: {{ goal - repcount }}</p>
-        <!-- <NotesList 
-          @app-addWorkout="addWorkout"
-          @app-changeNote="changeNote"
-          :workouts="workouts"
-          :activeNote="index"
-          :newReps="newReps"
-        /> -->
-        <div class="list">
-            <input type="number" v-model="newReps" :placeholder="units">
-            <button @click="addWorkout()" class="btn btn-info">+ {{ units }}</button>
-            <ul class="list-group">
-                <li class="list-group-item"
-                    v-for="(workout, index) in myWorkouts"
-                    :key="workout.index"
-                    @click="changeNote(index)">
-                    <p>{{ workout.time.toLocaleString('default', {month: 'short'})}} {{ workout.time.getDate() }} - <b>{{ workout.reps }}</b> reps</p>
-                </li>
-            </ul>
-        </div>
-    </div>
-    <div>
-        <h3>Leaderboard</h3>
-        <ul class="list-group">
-            <li class="list-group-item" v-for="participant  in participants" :key="participant.index">
-                <p><span v-if="participant.id === uid">&diams; </span><b>{{ participant.reps }} / {{ goal }}</b> {{ participant.name }}<span v-if="participant.id === uid"> &diams;</span></p>
-            </li>
-        </ul>
-    </div>
-    <div>
-        <h4 v-if="name === ''">Profile</h4>
-        <div v-if="name === ''"><p>Name: <input type="text" :placeholder="name" v-model="name"></p></div>
-        <button v-if="name === ''" @click="updateProfile">Save</button> <button @click="logout">Logout</button>
-    </div>
-    <!-- <button @click="test">test</button> -->
-  </div>
+<div id="home">
+    <b-container class="body">
+        <b-row>
+            <b-col cols="12" md="6">
+                <article class="card mb-2" style="max-width: 30rem;">
+                    <!-- <img src="../assets/KneeCrunches1.png" alt="" class="card-img-top"> -->
+
+                    <div class="card-body">
+
+                    <b-card-text>
+                        <h1>{{ repcount }} / {{ goal }}</h1>
+                        <b-progress :value="repcount" :max="goal" animated></b-progress>
+                        <div class="rep-input">
+                            <b-input-group class="mt-3">
+                                <b-form-input type="number" v-model="newReps" :placeholder="units"></b-form-input>
+                                <b-input-group-append>
+                                    <b-button @click="addWorkout()" variant="info">+ Add</b-button>
+                                </b-input-group-append>
+                            </b-input-group>
+                        </div>
+                        <p>Keep going {{ name }}!</p>
+                        <p>You need {{ Math.floor((goal - repcount) / days_left)}} {{units}}/day to reach your goal!</p>
+                        <p>Days left: {{ days_left }}</p>
+                        <p>Reps left: {{ goal - repcount }}</p>
+                    <!-- Some quick example text to build on the card title and make up the bulk of the card's content. -->
+                    </b-card-text>
+                    </div>
+
+
+
+                </article>
+            </b-col>
+            <b-col cols="12" md="6">
+                <div class="list">
+                    <h3>Leaderboard</h3>
+                    <b-list-group class="list-group">
+                        <b-list-group-item v-for="participant  in participants" :key="participant.index">
+                            <p><span v-if="participant.id === uid">&diams; </span><b>{{ participant.reps }} / {{ goal }}</b> {{ participant.name }}<span v-if="participant.id === uid"> &diams;</span></p>
+                        </b-list-group-item>
+                    </b-list-group>
+                </div>
+                <div>
+                    <h4 v-if="name === ''">Profile</h4>
+                    <div v-if="name === ''"><p>Name: <input type="text" :placeholder="name" v-model="name"></p></div>
+                    <button v-if="name === ''" @click="updateProfile">Save</button> <button @click="logout()" class="btn btn-info">Logout</button>
+                </div>
+            </b-col>
+
+            <!-- <div class="list">
+                <h3>History</h3>
+                <b-list-group>
+                    <b-list-group-item
+                        v-for="(workout, index) in myWorkouts"
+                        :key="workout.index"
+                        @click="changeNote(index)">
+                        <p>{{ workout.time.toLocaleString('default', {month: 'short'})}} {{ workout.time.getDate() }} - <b>{{ workout.reps }}</b> reps</p>
+                    </b-list-group-item>
+                </b-list-group>
+            </div> -->
+        </b-row>
+
+    </b-container>
+</div>
 </template>
 
 <script>
@@ -80,6 +98,9 @@ export default {
                 this.$router.replace('login')
             })
         },
+        changeNote(index) {
+            console.log(index)
+        },
         addWorkout() {
             if (this.newReps == "" || this.newReps == 0) {
                 alert("Enter number of reps")
@@ -90,7 +111,7 @@ export default {
                     time: now,
                     user: firebase.auth().currentUser.uid,
                 });
-                this.newReps = 0
+                this.newReps = ""
                 this.index = 0
                 this.repcount += parseInt(this.workouts[this.index].reps)
                 fb.db.collection("challenges").doc("knee-crunches-jan").collection("workouts").add(this.workouts[this.index])
@@ -163,7 +184,7 @@ export default {
         challengeRef.get().then((doc) => {
             if (doc.exists) {
                 this.units = doc.data().units
-                this.goal = doc.data().goal
+                this.goal = parseInt(doc.data().goal)
                 this.challenge_start = doc.data().start_date.toDate()
                 this.challenge_end = doc.data().end_date.toDate()
                 this.days_left = Math.floor((this.challenge_end - this.challenge_start) / (24 * 60 * 60 * 1000))
@@ -242,14 +263,30 @@ export default {
 </script>
 
 <style>
+#home {
+    background: url("../assets/KneeCrunches1.png") no-repeat center center fixed;;
+    background-size: cover;
+    min-height: 100%;
+    width: 100%;
+    height: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+.body {
+    margin-top: 30px;
+}
+article.card {
+    background: rgb(240, 248, 255, 0.73);
+}
+.rep-input {
+    margin: 10px 0 40px;
+}
 .list {
     margin: 20px;
 }
-ul {
-    list-style-type: none;
-}
-li {    
-    display: block;
+.list-group .list-group-item {
+    background: rgb(240, 248, 255, 0.73);
 }
 /* .highlight { */
     /* list-style-type: circle; */
