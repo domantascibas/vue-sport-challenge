@@ -21,14 +21,21 @@
             <button @click="addWorkout()" class="btn btn-info">+ {{ units }}</button>
             <ul class="list-group">
                 <li class="list-group-item"
-                    v-for="(workout, index) in workouts"
+                    v-for="(workout, index) in myWorkouts"
                     :key="workout.index"
-                    @click="changeNote(index)"
-                    >
+                    @click="changeNote(index)">
                     <p>{{ workout.time.toLocaleString('default', {month: 'short'})}} {{ workout.time.getDate() }} - <b>{{ workout.reps }}</b> reps</p>
                 </li>
             </ul>
         </div>
+    </div>
+    <div>
+        <h3>Leaderboard</h3>
+        <ul class="list-group">
+            <li class="list-group-item" v-for="participant  in participants" :key="participant.index">
+                <p><span v-if="participant.id === uid">&diams; </span><b>{{ participant.reps }} / {{ goal }}</b> {{ participant.name }}<span v-if="participant.id === uid"> &diams;</span></p>
+            </li>
+        </ul>
     </div>
     <div>
         <h4 v-if="name === ''">Profile</h4>
@@ -53,15 +60,19 @@ export default {
     },
     data: () => ({
         workouts: [],
+        myWorkouts: [],
         index: 0,
         repcount: 0,
         goal: 0,
         newReps: '',
         name: '',
+        uid: '',
         units: 'none',
         challenge_start: 0,
         challenge_end: 0,
-        days_left: 0
+        days_left: 0,
+        participants: [],
+        users: []
     }),
     methods: {
         logout: function() {
@@ -108,25 +119,45 @@ export default {
     },
     created() {
         var id = firebase.auth().currentUser.uid;
-        var workoutsRef = fb.db.collection("challenges").doc("knee-crunches-jan").collection("workouts").where("user", "==", id).orderBy("time", "desc");
+        var myWorkoutsRef = fb.db.collection("challenges").doc("knee-crunches-jan").collection("workouts").where("user", "==", id).orderBy("time", "desc");
+        var workoutsRef = fb.db.collection("challenges").doc("knee-crunches-jan").collection("workouts");
         var challengeRef = fb.db.collection("challenges").doc("knee-crunches-jan");
+        var usersRef = fb.db.collection("users");
 
-        workoutsRef.get().then((querySnapshot) => {
+        workoutsRef.get().then((doc) => {
+            doc.forEach((doc) => {
+                if (doc.exists) {
+                    this.workouts.push({
+                        reps: parseInt(doc.data().reps),
+                        user: doc.data().user
+                    })
+                }
+            });
+        });
+
+        usersRef.get().then((doc) => {
+            doc.forEach((doc) => {
+                if (doc.exists) {
+                    this.users.push({
+                        id: doc.id,
+                        name: doc.data().name
+                    })
+                }
+            });
+        });
+
+        myWorkoutsRef.get().then((querySnapshot) => {
             querySnapshot.forEach((doc) => {
-                this.workouts.push({
+                this.myWorkouts.push({
                     id: doc.id,
                     time: doc.data().time.toDate(),
                     reps: parseInt(doc.data().reps)
                 });
-                // console.log(`${doc.id} => ${doc.data().reps}`);
             });
 
-            for (var i in this.workouts) {
-                this.repcount += parseInt(this.workouts[i].reps)
-                // console.log(this.workouts[i].id)
-                // console.log(this.workouts[i].time)
-            }
-            // console.log(this.repcount)
+            // for (var i in this.myWorkouts) {
+            //     this.repcount += parseInt(this.myWorkouts[i].reps)
+            // }
         });
 
         challengeRef.get().then((doc) => {
@@ -136,14 +167,40 @@ export default {
                 this.challenge_start = doc.data().start_date.toDate()
                 this.challenge_end = doc.data().end_date.toDate()
                 this.days_left = Math.floor((this.challenge_end - this.challenge_start) / (24 * 60 * 60 * 1000))
+                var p = doc.data().participants
+                // console.log(p)
+                for (var i in p) {
+                    for (var j in this.users) {
+                        var repCount = 0
+                        if (this.users[j].id == p[i]) {
+                            for (var w in this.workouts) {
+                                if (this.workouts[w].user == p[i]) {
+                                    repCount += this.workouts[w].reps
+                                }
+                            }
+                            this.participants.push({
+                                id: p[i],
+                                name: this.users[j].name,
+                                reps: repCount
+                            })
+                            if (p[i] == firebase.auth().currentUser.uid) {
+                                this.repcount = repCount
+                            }
+                        }
+                    }
+                }
+                this.participants.sort((a, b) => (a.name < b.name) ? 1 : -1).sort((a, b) => (a.reps < b.reps) ? 1 : -1)
+                // for (var k in this.participants) {
+                //     console.log(this.participants[k].id, this.participants[k].name, this.participants[k].reps)
+                // }
             }
         });
 
         var user = firebase.auth().currentUser;
-        // var email, photoUrl, uid, emailVerified;
 
         if (user != null) {
             this.name = user.displayName;
+            this.uid = user.uid;
             // email = user.email;
             // photoUrl = user.photoURL;
             // emailVerified = user.emailVerified;
@@ -194,4 +251,8 @@ ul {
 li {    
     display: block;
 }
+/* .highlight { */
+    /* list-style-type: circle; */
+    /* background-color: #669999; */
+/* } */
 </style>
