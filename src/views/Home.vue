@@ -269,13 +269,13 @@ export default {
     background-size: cover;
     min-height: 100%;
     width: 100%;
-    height: auto;
-    position: fixed;
-    top: 0;
     left: 0;
 }
 .body {
-    margin-top: 30px;
+    padding-top: 100px;
+    padding-bottom: 60px;
+    left: 0;
+    right: 0;
 }
 article.card {
     background: rgb(240, 248, 255, 0.73);
@@ -289,8 +289,5 @@ article.card {
 .list-group .list-group-item {
     background: rgb(240, 248, 255, 0.73);
 }
-/* .highlight { */
-    /* list-style-type: circle; */
-    /* background-color: #669999; */
-/* } */
+
 </style>

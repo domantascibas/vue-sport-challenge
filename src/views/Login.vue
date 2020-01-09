@@ -47,31 +47,28 @@ export default {
     background-size: cover;
     min-height: 100%;
     width: 100%;
-    height: auto;
-    position: fixed;
-    top: 0;
     left: 0;
 }
-    .login {
-        margin-top: 100px;
-        padding: 50px 0 20px;
-        width: 100%;
-        background: rgb(240, 248, 255, 0.73);
-    }
-    input {
-        margin: 10px 0;
-        padding: 15px;
-    }
-    button {
-        margin-top: 20px;
-        cursor: pointer;
-    }
-    p {
-        margin-top: 40px;
-        font-size: 13px;
-    }
-    p a {
-        text-decoration: underline;
-        cursor: pointer;
-    }
+.login {
+    margin-top: 100px;
+    padding: 50px 0 20px;
+    width: 100%;
+    background: rgb(240, 248, 255, 0.73);
+}
+input {
+    margin: 10px 0;
+    padding: 15px;
+}
+button {
+    margin-top: 20px;
+    cursor: pointer;
+}
+p {
+    margin-top: 40px;
+    font-size: 13px;
+}
+p a {
+    text-decoration: underline;
+    cursor: pointer;
+}
 </style>
