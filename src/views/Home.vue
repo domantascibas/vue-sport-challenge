@@ -188,7 +188,8 @@ export default {
                 this.goal = parseInt(doc.data().goal)
                 this.challenge_start = doc.data().start_date.toDate()
                 this.challenge_end = doc.data().end_date.toDate()
-                this.days_left = Math.floor((this.challenge_end - this.challenge_start) / (24 * 60 * 60 * 1000))
+                var today = new Date()
+                this.days_left = Math.floor((this.challenge_end - today) / (24 * 60 * 60 * 1000))
                 var p = doc.data().participants
                 // console.log(p)
                 for (var i in p) {
