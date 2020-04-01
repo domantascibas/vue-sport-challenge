@@ -1,10 +1,16 @@
 import Vue from 'vue'
+import BootstrapVue from 'bootstrap-vue'
 import firebase from 'firebase'
 
 import App from './App.vue'
 import router from './router'
 
+import 'bootstrap/dist/css/bootstrap.css'
+import 'bootstrap-vue/dist/bootstrap-vue.css'
+// import './custom.scss'
+
 Vue.config.productionTip = false
+Vue.use(BootstrapVue)
 
 let app = ''
 
@@ -22,14 +28,16 @@ firebase.initializeApp({
 firebase.auth().onAuthStateChanged(() => {
     if (!app) {
         app = new Vue({
-          router,
+            router,
           render: h => h(App)
         }).$mount('#app')
     }
 })
 
 var db = firebase.firestore();
+var storage = firebase.storage();
 
 export {
     db,
+    storage
 }
