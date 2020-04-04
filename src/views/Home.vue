@@ -51,7 +51,7 @@
                 <div class="list">
                     <h3>Leaderboard</h3>
                     <b-list-group class="list-group">
-                        <b-list-group-item v-for="participant  in participants" :key="participant.index">
+                        <b-list-group-item v-for="participant in participants" :key="participant.index">
                             <p><span v-if="participant.id === uid">&diams; </span><b>{{ participant.reps.toFixed(2) }} / {{ goal }}</b> {{ participant.name }}<span v-if="participant.id === uid"> &diams;</span></p>
                         </b-list-group-item>
                     </b-list-group>
@@ -70,9 +70,12 @@
                 <b-list-group>
                     <b-list-group-item
                         v-for="(workout, index) in myWorkouts"
-                        :key="workout.index"
-                        @click="changeNote(index)">
-                        <p>{{ workout.time.toLocaleString('default', {month: 'short'})}} {{ workout.time.getDate() }} - <b>{{ workout.reps }} meters:</b> {{ workout.reps * 100 / workout.step_size }} {{ units }} * {{ workout.step_size }} cm</p>
+                        :key="workout.index">
+                        <p>{{ workout.time.toLocaleString('default', {month: 'short'})}} {{ workout.time.getDate() }} - <b>{{ workout.reps }} meters:</b> {{ workout.reps * 100 / workout.step_size }} {{ units }} * {{ workout.step_size }} cm
+                            <svg class="bi bi-trash-fill" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg" @click="removeWorkout(index)">
+                            <path fill-rule="evenodd" d="M2.5 1a1 1 0 00-1 1v1a1 1 0 001 1H3v9a2 2 0 002 2h6a2 2 0 002-2V4h.5a1 1 0 001-1V2a1 1 0 00-1-1H10a1 1 0 00-1-1H7a1 1 0 00-1 1H2.5zm3 4a.5.5 0 01.5.5v7a.5.5 0 01-1 0v-7a.5.5 0 01.5-.5zM8 5a.5.5 0 01.5.5v7a.5.5 0 01-1 0v-7A.5.5 0 018 5zm3 .5a.5.5 0 00-1 0v7a.5.5 0 001 0v-7z" clip-rule="evenodd"/>
+                            </svg>
+                        </p>
                     </b-list-group-item>
                 </b-list-group>
             </b-col>
@@ -124,10 +127,6 @@ export default {
                 this.$router.replace('login')
             })
         },
-        // changeNote(index) {
-        //     index = 0;
-        //     // console.log(index)
-        // },
 
         saveSettings() {
             if (this.step_size == "" || this.step_size ==0) {
@@ -141,25 +140,46 @@ export default {
             if (this.newReps == "" || this.newReps == 0) {
                 alert("Enter number of " + this.units)
             } else {
-                var now = new Date();
+                // var now = new Date();
                 if (this.unit_configurable) {
                     this.newReps = this.newReps * this.step_size / CM_IN_METER
                     // console.log(this.newReps)
                 }
-                this.workouts.unshift({
+
+                var newEntry = {
                     reps: this.newReps,
-                    time: now,
-                    user: firebase.auth().currentUser.uid,
+                    time: new Date(),
+                    user: this.uid,
                     step_size: parseInt(this.step_size)
-                });
+                }
+
+                this.workouts.unshift(newEntry)
+                
                 this.newReps = ""
                 this.index = 0
-                // console.log(this.workouts[this.index].reps)
                 this.repcount += this.workouts[this.index].reps
-                fb.db.collection("challenges").doc(this.currChallenge).collection("workouts").add(this.workouts[this.index])
-                // console.log("repcount", this.repcount)
+                // console.log(this.workouts[this.index].reps)
+                
+                var that = this
+                fb.db.collection("challenges").doc(this.currChallenge).collection("workouts")
+                .add(this.workouts[this.index])
+                .then(function(docRef) {
+                    newEntry.id = docRef.id
+                    that.myWorkouts.unshift(newEntry)
+                    console.log("Document written with ID: ", newEntry.id)
+                    that.updateLeadeboard()
+                })
+
             }
         },
+
+        removeWorkout(index) {
+            this.repcount -= this.myWorkouts[index].reps
+            this.updateLeadeboard()
+            fb.db.collection("challenges").doc(this.currChallenge).collection("workouts").doc(this.myWorkouts[index].id).delete()
+            this.myWorkouts.splice(index, 1)
+        },
+
         updateProfile() {
             var user = firebase.auth().currentUser;
 
@@ -174,12 +194,18 @@ export default {
                 // An error happened.
                     alert("error. profile not updated " + error.message)
             });
-        }
-        // removeNote() {
-            //     const id = this.notes[this.index].id;
-        //     fb.notesRef.child(id).remove();
-        // }
+        },
+
+        updateLeadeboard() {
+            for (var part in this.participants) {
+                if (this.participants[part].id == this.uid) {
+                    this.participants[part].reps = this.repcount
+                }
+            }
+            this.participants.sort((a, b) => (a.name < b.name) ? 1 : -1).sort((a, b) => (a.reps < b.reps) ? 1 : -1)
+        },
     },
+    
     created() {
         var id = firebase.auth().currentUser.uid;
         var myWorkoutsRef = fb.db.collection("challenges").doc(this.currChallenge).collection("workouts").where("user", "==", id).orderBy("time", "desc");
@@ -368,6 +394,9 @@ article.card {
 }
 .list-group .list-group-item {
     background: rgb(240, 248, 255, 0.8);
+}
+svg.bi-trash-fill:hover {
+    cursor: pointer;
 }
 
 </style>
