@@ -36,8 +36,9 @@ const fb = require('@/main.js')
 
 const CHALLENGES = "challenges"
 const PARTICIPANTS = "participants"
-// const TYPES = "types"
-// const USERS = "users"
+const TYPES = "types"
+const USERS = "users"
+const SETTINGS = "settings"
 // const WORKOUTS = "workouts"
 
 export default {
@@ -140,18 +141,51 @@ export default {
             }
         },
 
+        print_type_data() {
+            console.log('')
+            console.log('Type info')
+            console.log('Name               :', this.type_info.name)
+            console.log('Available Units')
+            for (var i in this.type_info.available_units) {
+                console.log('Size unit          :', this.type_info.available_units[i])
+            }
+            console.log('Available Step Size Units')
+            for (var j in this.type_info.step_size_units) {
+                console.log('Step size unit     :', this.type_info.step_size_units[j])
+            }
+        },
+
+        print_user_settings() {
+            console.log('')
+            console.log('User Settings')
+            console.log('Units              :', this.settings_info.units)
+            console.log('Step Size Units    :', this.settings_info.step_size_units)
+            console.log('Step Size          :', this.settings_info.step_size)
+        },
+
         get_challenge_data() {
             var challengeDataRef = fb.db.collection(CHALLENGES).doc(this.selected_challenge)
             challengeDataRef.get().then((doc) =>{
                 if (doc.exists) {
                     this.challenge_info = doc.data()
+                    this.get_type_data()
                 }
                 this.print_data()
             });
         },
 
+        get_type_data() {
+            var typeDataRef = fb.db.collection(TYPES).doc(this.challenge_info.type)
+            typeDataRef.get().then((doc) => {
+                if (doc.exists) {
+                    this.type_info = doc.data()
+                }
+                this.print_type_data()
+            });
+        },
+
         get_participant_data() {
-            var participantsRef  = fb.db.collection(CHALLENGES).doc(this.selected_challenge).collection(PARTICIPANTS)
+            var participantsRef = fb.db.collection(CHALLENGES).doc(this.selected_challenge).collection(PARTICIPANTS)
             participantsRef.get().then((doc) => {
                 doc.forEach((doc) => {
                     if (doc.exists) {
@@ -165,10 +199,20 @@ export default {
             });
         },
 
+        get_user_settings() {
+            var userSettingsRef = fb.db.collection(USERS).doc(this.user_info.id).collection(SETTINGS).doc(this.selected_challenge)
+            userSettingsRef.get().then((doc) => {
+                if (doc.exists) {
+                    this.settings_info = doc.data()
+                }
+                this.print_user_settings()
+            });
+        },
+
         sort_leaderboard() {
             this.participants.sort((a, b) => (a.name < b.name) ? 1 : -1).sort((a, b) => (a.result < b.result) ? 1 : -1)
         }
-            
+
             // challengeRef.get().then((doc) => {
                 //     if (doc.exists) {
                     //         this.type = doc.data().type
@@ -313,6 +357,7 @@ export default {
         // Retrieve challenge info:
         this.get_challenge_data()
         this.get_participant_data()
+        this.get_user_settings()
 
         // var id = firebase.auth().currentUser.uid;
         // var myWorkoutsRef = fb.db.collection("challenges").doc(this.currChallenge).collection("workouts").where("user", "==", id).orderBy("time", "desc");
