@@ -24,7 +24,7 @@
                             <!-- <p v-if="hasEndDate">Days left: {{ days_left }}</p> -->
                             <!-- <p v-if="unit_configurable">{{ units }} left: {{ ((goal - repcount) / (step_size / 100)).toFixed(2) }}</p> -->
                             <!-- <p v-else>{{ units }} left: {{ goal - repcount }}</p> -->
-                            <p>{{ challenge_info.units == 0 ? 'steps' : 'meters' }} left: {{ challenge_info.goal - user_workout_data.total_result }}</p>
+                            <p>{{ settings_info.units == 0 ? 'steps' : 'meters' }} left: {{ settings_info.units == 1 ? challenge_info.goal - user_workout_data.total_result : settings_info.step_size_units == 0 ? ((challenge_info.goal - user_workout_data.total_result) * 1000 / settings_info.step_size).toFixed(2) : settings_info.step_size_units == 1 ? ((challenge_info.goal - user_workout_data.total_result) * 100 / settings_info.step_size).toFixed(2) : ((challenge_info.goal - user_workout_data.total_result) / settings_info.step_size).toFixed(2) }}</p>
 
                             <div class="step-size-input">
                                 <b-input-group class="mt-3">
@@ -305,14 +305,22 @@ export default {
 
         get_workouts() {
             var workoutDataRef = fb.db.collection(USERS).doc(this.user_info.id).collection(CHALLENGES).doc(this.selected_challenge).collection(WORKOUTS)
+            var entryCount = 0
             workoutDataRef.get().then((doc) => {
                 doc.forEach((doc) => {
                     if (doc.exists) {
                         var temp_work = doc.data()
+                        temp_work.id = doc.id
                         temp_work.date = temp_work.date.toDate()
+                        entryCount += temp_work.entry
                         this.workouts.push(temp_work)
                     }
                 })
+                this.sort_history()
+                if (entryCount != this.user_workout_data.total_result) {
+                    console.log("entry count mismatch", entryCount, this.user_workout_data.total_result)
+                    this.updateTotalResult(entryCount, 0)
+                }
             });
         },
 
@@ -328,6 +336,10 @@ export default {
 
         sort_leaderboard() {
             this.participants.sort((a, b) => (a.name < b.name) ? 1 : -1).sort((a, b) => (a.total_result < b.total_result) ? 1 : -1)
+        },
+
+        sort_history() {
+            this.workouts.sort((a, b) => (a.date < b.date) ? 1 : -1)
         },
 
         convertSteps(units, size, steps) {
@@ -370,31 +382,53 @@ export default {
             }
         },
 
+        removeWorkout(index) {
+            var wk_info = this.workouts[index]
+            console.log("remove workout", index, wk_info)
+            this.deleteEntry(wk_info, index)
+            return index
+        },
+
         saveEntry(entry) {
             var that = this
             fb.db.collection(USERS).doc(this.user_info.id).collection(CHALLENGES).doc(this.selected_challenge).collection(WORKOUTS)
             .add(entry)
             .then(function(docRef) {
-                var increase = true
-                that.updateTotalResult(entry.entry, increase)
+                that.updateTotalResult(entry.entry, 1)
                 entry.id = docRef.id
-                console.log("Document written with ID: ", entry.id)
-                // that.myWorkouts.unshift(entry)
+                that.workouts.unshift(entry)
             })
             return entry
         },
 
-        updateTotalResult(entry, increase) {
-            if (!increase) {
-                entry = entry * (-1)
-            }
-            var userDataRef = fb.db.collection(USERS).doc(this.user_info.id).collection(CHALLENGES).doc(this.selected_challenge)
-            this.updateTotalResultTransaction(userDataRef, entry)
-            var challengeDataRef = fb.db.collection(CHALLENGES).doc(this.selected_challenge).collection(PARTICIPANTS).doc(this.user_info.id)
-            this.updateTotalResultTransaction(challengeDataRef, entry)
+        deleteEntry(entry, index) {
+            var that = this
+            fb.db.collection(USERS).doc(this.user_info.id).collection(CHALLENGES).doc(this.selected_challenge).collection(WORKOUTS).doc(entry.id)
+            .delete()
+            .then(function() {
+                that.updateTotalResult(entry.entry, -1)
+                that.workouts.splice(index, 1)
+                that.sort_history()
+                console.log("Document successfully deleted!");
+            }).catch(function(error) {
+                console.error("Error removing document: ", error);
+            });
         },
 
-        updateTotalResultTransaction(ref, result) {
+        updateTotalResult(entry, increase) {
+            var replace = false
+            if (increase == -1) {
+                entry = entry * (-1)
+            } else if (increase == 0) {
+                replace = true
+            }
+            var userDataRef = fb.db.collection(USERS).doc(this.user_info.id).collection(CHALLENGES).doc(this.selected_challenge)
+            this.updateTotalResultTransaction(userDataRef, entry, replace)
+            var challengeDataRef = fb.db.collection(CHALLENGES).doc(this.selected_challenge).collection(PARTICIPANTS).doc(this.user_info.id)
+            this.updateTotalResultTransaction(challengeDataRef, entry, replace)
+        },
+
+        updateTotalResultTransaction(ref, result, replace) {
             var that = this
             fb.db.runTransaction(function(transaction) {
                 // This code may get re-run multiple times if there are conflicts.
@@ -402,9 +436,14 @@ export default {
                     if (!doc.exists) {
                         throw "Document does not exist!";
                     }
-                    var newResult = parseFloat(doc.data().total_result) + result;
-                    transaction.update(ref, { total_result: newResult });
-                    return newResult
+                    var newResult = 0
+                    if (replace) {
+                        newResult = result;
+                    } else {
+                        newResult = doc.data().total_result + result;
+                    }
+                    transaction.update(ref, { total_result: parseFloat(newResult.toFixed(2)) });
+                    return parseFloat(newResult.toFixed(2))
                 });
             }).then(function(newResult) {
                 that.user_workout_data.total_result = newResult
@@ -472,6 +511,7 @@ export default {
         this.get_challenge_data()
         this.get_participant_data()
         this.get_workouts()
+        // // }
 
     // /* eslint-disable no-console */
     // // value = snapshot.val() | id = snapshot.key
