@@ -457,6 +457,13 @@ export default {
             });
         },
 
+        saveSettings() {
+            if (this.settings_info.step_size == "" || this.settings_info.step_size == 0) {
+                alert("Step size can't be zero")
+            } else {
+                fb.db.collection(USERS).doc(this.user_info.id).collection(SETTINGS).doc(this.selected_challenge).update({ step_size : this.settings_info.step_size })
+            }
+        }
 
             // challengeRef.get().then((doc) => {
                 //     if (doc.exists) {
@@ -467,15 +474,6 @@ export default {
         //         this.challenge_end = doc.data().end_date.toDate()
         //         var today = new Date()
         //         this.days_left = Math.floor((this.challenge_end - today) / (24 * 60 * 60 * 1000))
-                
-
-        // saveSettings() {
-        //     if (this.step_size == "" || this.step_size ==0) {
-        //         alert("Step size can't be zero!")
-        //     } else {
-        //         fb.db.collection('users').doc(this.uid).update({'step_size': this.step_size})
-        //     }
-        // },
 
         // updateProfile() {
         //     var user = firebase.auth().currentUser;
