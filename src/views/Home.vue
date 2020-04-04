@@ -12,7 +12,8 @@
                             <b-progress :value="user_workout_data.total_result" :max="challenge_info.goal" animated></b-progress>
                             <div class="rep-input">
                                 <b-input-group class="mt-3">
-                                    <!-- <b-form-input type="number" v-model="newReps" :placeholder="units"></b-form-input> -->
+                                    <b-form-input type="number" v-model="new_workout_entry"></b-form-input>
+                                    <!-- :placeholder="settings_info.step_size_units" -->
                                     <b-input-group-append>
                                         <b-button @click="addWorkout()" variant="info">+ Add</b-button>
                                     </b-input-group-append>
@@ -51,7 +52,7 @@
                     <h3>Leaderboard</h3>
                     <b-list-group class="list-group">
                         <b-list-group-item v-for="participant in participants" :key="participant.index">
-                            <p><span v-if="participant.id === user_info.id">&diams; </span><b>{{ participant.result }} / {{ challenge_info.goal }}</b> {{ participant.name }}<span v-if="participant.id === user_info.id"> &diams;</span></p>
+                            <p><span v-if="participant.id === user_info.id">&diams; </span><b>{{ participant.total_result }} / {{ challenge_info.goal }}</b> {{ participant.name }}<span v-if="participant.id === user_info.id"> &diams;</span></p>
                         </b-list-group-item>
                     </b-list-group>
                 </div>
@@ -83,7 +84,7 @@ const PARTICIPANTS = "participants"
 const TYPES = "types"
 const USERS = "users"
 const SETTINGS = "settings"
-// const WORKOUTS = "workouts"
+const WORKOUTS = "workouts"
 
 export default {
     name: 'home',
@@ -93,6 +94,7 @@ export default {
     data: () => ({
         selected_challenge: "ZpmOZVpv2YJsI9e8ZpvJ",
         participants: [],
+        new_workout_entry: null,
 
         challenge_info: {
             name: "New Challenge",
@@ -121,9 +123,10 @@ export default {
 
         workout_info: {
             date: 0,
-            step_size: 0,
             steps: 0,
-            tot_climb: 0
+            step_size_units: 0,
+            step_size: 0,
+            entry: 0
         },
 
         user_info: {
@@ -185,7 +188,7 @@ export default {
                 console.log('#'+p)
                 console.log('Name       :', this.participants[p].name)
                 console.log('ID         :', this.participants[p].id)
-                console.log('Result     :', this.participants[p].result)
+                console.log('Result     :', this.participants[p].total_result)
                 console.log('is admin   :', this.participants[p].is_admin)
                 console.log('is visible :', this.participants[p].is_visible)
             }
@@ -293,8 +296,99 @@ export default {
         },
 
         sort_leaderboard() {
-            this.participants.sort((a, b) => (a.name < b.name) ? 1 : -1).sort((a, b) => (a.result < b.result) ? 1 : -1)
-        }
+            this.participants.sort((a, b) => (a.name < b.name) ? 1 : -1).sort((a, b) => (a.total_result < b.total_result) ? 1 : -1)
+        },
+
+        convertSteps(units, size, steps) {
+            if (units == 0) {
+                return parseFloat((size / 1000 * steps).toFixed(2))
+            }
+            if (units == 1) {
+                return parseFloat((size / 100 * steps).toFixed(2))
+            }
+            if (units == 2) {
+                return parseFloat((size * steps).toFixed(2))
+            }
+        },
+
+        // are the units configurable. need fn to check
+        addWorkout() {
+            if (this.new_workout_entry == null || this.new_workout_entry == 0) {
+                alert("Empty workout!")
+            } else {
+                var newEntry = {
+                    date: new Date(),
+                    steps: 0,
+                    step_size: 0,
+                    step_size_units: 0,
+                    entry: 0
+                }
+
+                if (this.challenge_info.units == 0) {
+                    newEntry.steps = this.new_workout_entry
+                } else if (this.challenge_info.units == 1){
+                    newEntry.steps = this.new_workout_entry
+                    newEntry.step_size = this.settings_info.step_size
+                    newEntry.step_size_units = this.settings_info.step_size_units
+                    newEntry.entry = this.convertSteps(newEntry.step_size_units, newEntry.step_size, newEntry.steps)
+                }
+
+                this.new_workout_entry = null
+                
+                this.saveEntry(newEntry)
+            }
+        },
+
+        saveEntry(entry) {
+            var that = this
+            fb.db.collection(USERS).doc(this.user_info.id).collection(CHALLENGES).doc(this.selected_challenge).collection(WORKOUTS)
+            .add(entry)
+            .then(function(docRef) {
+                var increase = true
+                that.updateTotalResult(entry.entry, increase)
+                entry.id = docRef.id
+                console.log("Document written with ID: ", entry.id)
+                // that.myWorkouts.unshift(entry)
+            })
+            return entry
+        },
+
+        updateTotalResult(entry, increase) {
+            if (!increase) {
+                entry = entry * (-1)
+            }
+            var userDataRef = fb.db.collection(USERS).doc(this.user_info.id).collection(CHALLENGES).doc(this.selected_challenge)
+            this.updateTotalResultTransaction(userDataRef, entry)
+            var challengeDataRef = fb.db.collection(CHALLENGES).doc(this.selected_challenge).collection(PARTICIPANTS).doc(this.user_info.id)
+            this.updateTotalResultTransaction(challengeDataRef, entry)
+        },
+
+        updateTotalResultTransaction(ref, result) {
+            var that = this
+            fb.db.runTransaction(function(transaction) {
+                // This code may get re-run multiple times if there are conflicts.
+                return transaction.get(ref).then(function(doc) {
+                    if (!doc.exists) {
+                        throw "Document does not exist!";
+                    }
+                    var newResult = parseFloat(doc.data().total_result) + result;
+                    transaction.update(ref, { total_result: newResult });
+                    return newResult
+                });
+            }).then(function(newResult) {
+                that.user_workout_data.total_result = newResult
+                for (var p in that.participants) {
+                    if (that.participants[p].id == that.user_info.id) {
+                        that.participants[p].total_result = newResult
+                    }
+                }
+                that.sort_leaderboard()
+                // console.log("Transaction successfully committed!");
+            }).catch(function(error) {
+                console.log("Transaction failed: ", error);
+            });
+        },
+
 
             // challengeRef.get().then((doc) => {
                 //     if (doc.exists) {
@@ -306,83 +400,12 @@ export default {
         //         var today = new Date()
         //         this.days_left = Math.floor((this.challenge_end - today) / (24 * 60 * 60 * 1000))
                 
-        //         var p = doc.data().participants
-        //         // console.log(p)
-                
-        //         for (var t in this.types) {
-        //             if (this.types[t].id == this.type) {
-        //                 this.units = this.types[t].units
-        //                 if (this.types[t].unit_configurable) {
-        //                     this.unit_configurable = this.types[t].unit_configurable
-        //                 }
-        //             }
-        //         }
-
-        //         for (var i in p) {
-        //             for (var j in this.users) {
-        //                 var repCount = 0
-        //                 if (this.users[j].id == p[i]) {
-        //                     for (var w in this.workouts) {
-        //                         if (this.workouts[w].user == p[i]) {
-        //                             repCount += this.workouts[w].reps
-        //                         }
-        //                     }
-        //                     this.participants.push({
-        //                         id: p[i],
-        //                         name: this.users[j].name,
-        //                         reps: repCount
-        //                     })
-        //                     if (p[i] == firebase.auth().currentUser.uid) {
-        //                         this.repcount = repCount
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // });
 
         // saveSettings() {
         //     if (this.step_size == "" || this.step_size ==0) {
         //         alert("Step size can't be zero!")
         //     } else {
         //         fb.db.collection('users').doc(this.uid).update({'step_size': this.step_size})
-        //     }
-        // },
-
-        // addWorkout() {
-        //     if (this.newReps == "" || this.newReps == 0) {
-        //         alert("Enter number of " + this.units)
-        //     } else {
-        //         // var now = new Date();
-        //         if (this.unit_configurable) {
-        //             this.newReps = this.newReps * this.step_size / CM_IN_METER
-        //             // console.log(this.newReps)
-        //         }
-
-        //         var newEntry = {
-        //             reps: this.newReps,
-        //             time: new Date(),
-        //             user: this.uid,
-        //             step_size: parseInt(this.step_size)
-        //         }
-
-        //         this.workouts.unshift(newEntry)
-                
-        //         this.newReps = ""
-        //         this.index = 0
-        //         this.repcount += this.workouts[this.index].reps
-        //         // console.log(this.workouts[this.index].reps)
-                
-        //         var that = this
-        //         fb.db.collection("challenges").doc(this.currChallenge).collection("workouts")
-        //         .add(this.workouts[this.index])
-        //         .then(function(docRef) {
-        //             newEntry.id = docRef.id
-        //             that.myWorkouts.unshift(newEntry)
-        //             // console.log("Document written with ID: ", newEntry.id)
-        //             that.updateLeadeboard()
-        //         })
-
         //     }
         // },
 
@@ -408,15 +431,6 @@ export default {
         //             alert("error. profile not updated " + error.message)
         //     });
         // },
-
-        // updateLeadeboard() {
-        //     for (var part in this.participants) {
-        //         if (this.participants[part].id == this.uid) {
-        //             this.participants[part].reps = this.repcount
-        //         }
-        //     }
-        //     this.participants.sort((a, b) => (a.name < b.name) ? 1 : -1).sort((a, b) => (a.reps < b.reps) ? 1 : -1)
-        // },
     },
     
     created() {
@@ -426,82 +440,6 @@ export default {
         // Retrieve challenge info:
         this.get_challenge_data()
         this.get_participant_data()
-
-        // var id = firebase.auth().currentUser.uid;
-        // var myWorkoutsRef = fb.db.collection("challenges").doc(this.currChallenge).collection("workouts").where("user", "==", id).orderBy("time", "desc");
-        // var workoutsRef = fb.db.collection("challenges").doc(this.currChallenge).collection("workouts");
-        // var challengeRef = fb.db.collection("challenges").doc(this.currChallenge);
-        // var challengeTypeRef = fb.db.collection("type");
-        // var usersRef = fb.db.collection("users");
-
-        // workoutsRef.get().then((doc) => {
-        //     doc.forEach((doc) => {
-        //         if (doc.exists) {
-        //             this.workouts.push({
-        //                 reps: doc.data().reps,
-        //                 user: doc.data().user,
-        //                 step_size: doc.data().step_size
-        //             })
-        //             // console.log(doc.data())
-        //         }
-        //     });
-        // });
-
-        // usersRef.get().then((doc) => {
-        //     doc.forEach((doc) => {
-        //         if (doc.exists) {
-        //             this.users.push({
-        //                 id: doc.id,
-        //                 name: doc.data().name,
-        //                 step_size: doc.data().step_size
-        //             })
-
-        //             if (doc.id == this.uid) {
-        //                 if (doc.data().step_size != null) {
-        //                     this.step_size = doc.data().step_size
-        //                 }
-        //             }
-        //         }
-        //     });
-        // });
-
-        // myWorkoutsRef.get().then((querySnapshot) => {
-        //     querySnapshot.forEach((doc) => {
-        //         this.myWorkouts.push({
-        //             id: doc.id,
-        //             time: doc.data().time.toDate(),
-        //             reps: doc.data().reps,
-        //             step_size: doc.data().step_size
-        //         });
-        //     });
-
-        //     // for (var i in this.myWorkouts) {
-        //         //     this.repcount += parseInt(this.myWorkouts[i].reps)
-        //     // }
-        // });
-
-        // challengeTypeRef.get().then((doc) => {
-        //     doc.forEach((doc) => {
-        //         if (doc.exists) {
-        //             this.types.push({
-        //                 id: doc.id,
-        //                 display_name: doc.data().display_name,
-        //                 name: doc.data().name,
-        //                 unit_configurable: doc.data().unit_configurable,
-        //                 units: doc.data().units,
-        //             })
-        //             // console.log(this.types[0].id, this.types[0].name)
-        //         }
-        //     });
-        // });
-
-        // 
-
-        // console.log(this.name)
-        // console.log(email)
-        // console.log(photoUrl)
-        // console.log(emailVerified)
-        // console.log(uid)
 
     // /* eslint-disable no-console */
     // // value = snapshot.val() | id = snapshot.key
