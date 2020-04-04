@@ -3,6 +3,50 @@
     <b-container class="body">
         <b-row>
             <b-col cols="12" md="6">
+                <article class="card mb-2" style="max-width: 30rem;">
+                    <!-- <img src="../assets/KneeCrunches1.png" alt="" class="card-img-top"> -->
+
+                    <div class="card-body">
+                        <b-card-text>
+                            <h1>{{ user_workout_data.total_result }} / {{ challenge_info.goal }}</h1>
+                            <b-progress :value="user_workout_data.total_result" :max="challenge_info.goal" animated></b-progress>
+                            <div class="rep-input">
+                                <b-input-group class="mt-3">
+                                    <!-- <b-form-input type="number" v-model="newReps" :placeholder="units"></b-form-input> -->
+                                    <b-input-group-append>
+                                        <b-button @click="addWorkout()" variant="info">+ Add</b-button>
+                                    </b-input-group-append>
+                                </b-input-group>
+                            </div>
+                            <p>Keep going {{ user_info.name }}!</p>
+                            <!-- <p v-if="hasEndDate">You need {{ Math.floor((goal - repcount) / days_left)}} {{units}}/day to reach your goal!</p> -->
+                            <!-- <p v-if="hasEndDate">Days left: {{ days_left }}</p> -->
+                            <!-- <p v-if="unit_configurable">{{ units }} left: {{ ((goal - repcount) / (step_size / 100)).toFixed(2) }}</p> -->
+                            <!-- <p v-else>{{ units }} left: {{ goal - repcount }}</p> -->
+
+                            <div class="step-size-input">
+                                <b-input-group class="mt-3">
+                                    <b-col cols="4">
+                                        <p >Step size ({{ settings_info.step_size_units }}):</p>
+                                    </b-col>
+                                    <b-col cols="4">
+                                        <b-form-input type="number" placeholder="cm" v-model="settings_info.step_size"></b-form-input>
+                                    </b-col>
+                                    <b-col cols="4">
+                                        <b-input-group-append>
+                                            <b-button @click="saveSettings()" variant="info">Save</b-button>
+                                        </b-input-group-append>
+                                    </b-col>
+                                </b-input-group>
+                            </div>
+                        <!-- Some quick example text to build on the card title and make up the bulk of the card's content. -->
+
+                        </b-card-text>
+                    </div>
+                </article>
+            </b-col>
+
+            <b-col cols="12" md="6">
                 <div class="list">
                     <h3>Leaderboard</h3>
                     <b-list-group class="list-group">
@@ -85,6 +129,12 @@ export default {
         user_info: {
             name: "User",
             id: "userID"
+        },
+
+        user_workout_data: {
+            total_result: 0,
+            last_workout: 0,
+            biggest_workout: 0
         }
 
         // workouts: [],
@@ -161,6 +211,39 @@ export default {
             console.log('Units              :', this.settings_info.units)
             console.log('Step Size Units    :', this.settings_info.step_size_units)
             console.log('Step Size          :', this.settings_info.step_size)
+        },
+
+        print_user_data() {
+            console.log('')
+            console.log('User Info')
+            console.log('Name               :', this.user_info.name)
+            console.log('ID                 :', this.user_info.id)
+            console.log('Total Result       :', this.user_info.total_result)
+            console.log('Last Workout       :', this.user_info.last_workout)
+            console.log('Biggest Workout    :', this.user_info.biggest_workout)
+        },
+
+        get_user_data() {
+            var user = firebase.auth().currentUser;
+
+            if (user != null) {
+                this.user_info.name = user.displayName;
+                this.user_info.id = user.uid;
+                // email = user.email;
+                // photoUrl = user.photoURL;
+                // emailVerified = user.emailVerified;
+                // uid = user.uid;  // The user's ID, unique to the Firebase project. Do NOT use
+                                // this value to authenticate with your backend server, if
+                                // you have one. Use User.getToken() instead.
+            }
+
+            var userResultsDataRef = fb.db.collection(USERS).doc(this.user_info.id).collection(CHALLENGES).doc(this.selected_challenge)
+            userResultsDataRef.get().then((doc) => {
+                if (doc.exists) {
+                    this.user_workout_data = doc.data()
+                }
+                this.print_user_data()
+            });
         },
 
         get_challenge_data() {
@@ -341,23 +424,12 @@ export default {
     },
     
     created() {
-        var user = firebase.auth().currentUser;
-
-        if (user != null) {
-            this.user_info.name = user.displayName;
-            this.user_info.id = user.uid;
-            // email = user.email;
-            // photoUrl = user.photoURL;
-            // emailVerified = user.emailVerified;
-            // uid = user.uid;  // The user's ID, unique to the Firebase project. Do NOT use
-                            // this value to authenticate with your backend server, if
-                            // you have one. Use User.getToken() instead.
-        }
-
+        // Retrieve user data:
+        this.get_user_data()
+        this.get_user_settings()
         // Retrieve challenge info:
         this.get_challenge_data()
         this.get_participant_data()
-        this.get_user_settings()
 
         // var id = firebase.auth().currentUser.uid;
         // var myWorkoutsRef = fb.db.collection("challenges").doc(this.currChallenge).collection("workouts").where("user", "==", id).orderBy("time", "desc");
