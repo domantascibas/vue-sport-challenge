@@ -166,7 +166,7 @@ export default {
                 .then(function(docRef) {
                     newEntry.id = docRef.id
                     that.myWorkouts.unshift(newEntry)
-                    console.log("Document written with ID: ", newEntry.id)
+                    // console.log("Document written with ID: ", newEntry.id)
                     that.updateLeadeboard()
                 })
 
