@@ -9,7 +9,7 @@
                     <div class="card-body">
 
                     <b-card-text>
-                        <h1>{{ repcount }} / {{ goal }}</h1>
+                        <h1>{{ repcount.toFixed(2) }} / {{ goal }}</h1>
                         <b-progress :value="repcount" :max="goal" animated></b-progress>
                         <div class="rep-input">
                             <b-input-group class="mt-3">
@@ -20,23 +20,39 @@
                             </b-input-group>
                         </div>
                         <p>Keep going {{ name }}!</p>
-                        <p>You need {{ Math.floor((goal - repcount) / days_left)}} {{units}}/day to reach your goal!</p>
-                        <p>Days left: {{ days_left }}</p>
-                        <p>Reps left: {{ goal - repcount }}</p>
+                        <p v-if="hasEndDate">You need {{ Math.floor((goal - repcount) / days_left)}} {{units}}/day to reach your goal!</p>
+                        <p v-if="hasEndDate">Days left: {{ days_left }}</p>
+                        <p v-if="unit_configurable">{{ units }} left: {{ ((goal - repcount) / (step_size / 100)).toFixed(2) }}</p>
+                        <p v-else>{{ units }} left: {{ goal - repcount }}</p>
+
+                        <div v-if="unit_configurable" class="step-size-input">
+                            <b-input-group class="mt-3">
+                                <b-col cols="4">
+                                    <p >Step size (cm):</p>
+                                </b-col>
+                                <b-col cols="4">
+                                    <b-form-input type="number" placeholder="cm" v-model="step_size"></b-form-input>
+                                </b-col>
+                                <b-col cols="4">
+                                    <b-input-group-append>
+                                        <b-button @click="saveSettings()" variant="info">Save</b-button>
+                                    </b-input-group-append>
+                                </b-col>
+                            </b-input-group>
+                        </div>
                     <!-- Some quick example text to build on the card title and make up the bulk of the card's content. -->
+
                     </b-card-text>
                     </div>
-
-
-
                 </article>
             </b-col>
+
             <b-col cols="12" md="6">
                 <div class="list">
                     <h3>Leaderboard</h3>
                     <b-list-group class="list-group">
                         <b-list-group-item v-for="participant  in participants" :key="participant.index">
-                            <p><span v-if="participant.id === uid">&diams; </span><b>{{ participant.reps }} / {{ goal }}</b> {{ participant.name }}<span v-if="participant.id === uid"> &diams;</span></p>
+                            <p><span v-if="participant.id === uid">&diams; </span><b>{{ participant.reps.toFixed(2) }} / {{ goal }}</b> {{ participant.name }}<span v-if="participant.id === uid"> &diams;</span></p>
                         </b-list-group-item>
                     </b-list-group>
                 </div>
@@ -46,18 +62,20 @@
                     <button v-if="name === ''" @click="updateProfile">Save</button> <button @click="logout()" class="btn btn-info">Logout</button>
                 </div>
             </b-col>
+        </b-row>
 
-            <!-- <div class="list">
+        <b-row>
+            <b-col cols="12" md="5" class="list">
                 <h3>History</h3>
                 <b-list-group>
                     <b-list-group-item
                         v-for="(workout, index) in myWorkouts"
                         :key="workout.index"
                         @click="changeNote(index)">
-                        <p>{{ workout.time.toLocaleString('default', {month: 'short'})}} {{ workout.time.getDate() }} - <b>{{ workout.reps }}</b> reps</p>
+                        <p>{{ workout.time.toLocaleString('default', {month: 'short'})}} {{ workout.time.getDate() }} - <b>{{ workout.reps }} meters:</b> {{ workout.reps * 100 / workout.step_size }} {{ units }} * {{ workout.step_size }} cm</p>
                     </b-list-group-item>
                 </b-list-group>
-            </div> -->
+            </b-col>
         </b-row>
 
     </b-container>
@@ -71,12 +89,15 @@ import firebase from 'firebase'
 
 const fb = require('@/main.js')
 
+const CM_IN_METER = 100
+
 export default {
     name: 'home',
     components: {
         // NotesList,
     },
     data: () => ({
+        currChallenge: 'everest-challenge',
         workouts: [],
         myWorkouts: [],
         index: 0,
@@ -86,11 +107,16 @@ export default {
         name: '',
         uid: '',
         units: 'none',
+        unit_configurable: false,
+        step_size: CM_IN_METER,
+        type: 'none',
         challenge_start: 0,
         challenge_end: 0,
+        hasEndDate: 0,
         days_left: 0,
         participants: [],
-        users: []
+        users: [],
+        types: []
     }),
     methods: {
         logout: function() {
@@ -102,21 +128,36 @@ export default {
         //     index = 0;
         //     // console.log(index)
         // },
+
+        saveSettings() {
+            if (this.step_size == "" || this.step_size ==0) {
+                alert("Step size can't be zero!")
+            } else {
+                fb.db.collection('users').doc(this.uid).update({'step_size': this.step_size})
+            }
+        },
+
         addWorkout() {
             if (this.newReps == "" || this.newReps == 0) {
-                alert("Enter number of reps")
+                alert("Enter number of " + this.units)
             } else {
                 var now = new Date();
+                if (this.unit_configurable) {
+                    this.newReps = this.newReps * this.step_size / CM_IN_METER
+                    // console.log(this.newReps)
+                }
                 this.workouts.unshift({
                     reps: this.newReps,
                     time: now,
                     user: firebase.auth().currentUser.uid,
+                    step_size: parseInt(this.step_size)
                 });
                 this.newReps = ""
                 this.index = 0
-                this.repcount += parseInt(this.workouts[this.index].reps)
-                fb.db.collection("challenges").doc("knee-crunches-jan").collection("workouts").add(this.workouts[this.index])
-                // console.log(this.repcount)
+                // console.log(this.workouts[this.index].reps)
+                this.repcount += this.workouts[this.index].reps
+                fb.db.collection("challenges").doc(this.currChallenge).collection("workouts").add(this.workouts[this.index])
+                // console.log("repcount", this.repcount)
             }
         },
         updateProfile() {
@@ -141,18 +182,21 @@ export default {
     },
     created() {
         var id = firebase.auth().currentUser.uid;
-        var myWorkoutsRef = fb.db.collection("challenges").doc("knee-crunches-jan").collection("workouts").where("user", "==", id).orderBy("time", "desc");
-        var workoutsRef = fb.db.collection("challenges").doc("knee-crunches-jan").collection("workouts");
-        var challengeRef = fb.db.collection("challenges").doc("knee-crunches-jan");
+        var myWorkoutsRef = fb.db.collection("challenges").doc(this.currChallenge).collection("workouts").where("user", "==", id).orderBy("time", "desc");
+        var workoutsRef = fb.db.collection("challenges").doc(this.currChallenge).collection("workouts");
+        var challengeRef = fb.db.collection("challenges").doc(this.currChallenge);
+        var challengeTypeRef = fb.db.collection("type");
         var usersRef = fb.db.collection("users");
 
         workoutsRef.get().then((doc) => {
             doc.forEach((doc) => {
                 if (doc.exists) {
                     this.workouts.push({
-                        reps: parseInt(doc.data().reps),
-                        user: doc.data().user
+                        reps: doc.data().reps,
+                        user: doc.data().user,
+                        step_size: doc.data().step_size
                     })
+                    // console.log(doc.data())
                 }
             });
         });
@@ -162,8 +206,15 @@ export default {
                 if (doc.exists) {
                     this.users.push({
                         id: doc.id,
-                        name: doc.data().name
+                        name: doc.data().name,
+                        step_size: doc.data().step_size
                     })
+
+                    if (doc.id == this.uid) {
+                        if (doc.data().step_size != null) {
+                            this.step_size = doc.data().step_size
+                        }
+                    }
                 }
             });
         });
@@ -173,25 +224,53 @@ export default {
                 this.myWorkouts.push({
                     id: doc.id,
                     time: doc.data().time.toDate(),
-                    reps: parseInt(doc.data().reps)
+                    reps: doc.data().reps,
+                    step_size: doc.data().step_size
                 });
             });
 
             // for (var i in this.myWorkouts) {
-            //     this.repcount += parseInt(this.myWorkouts[i].reps)
+                //     this.repcount += parseInt(this.myWorkouts[i].reps)
             // }
+        });
+
+        challengeTypeRef.get().then((doc) => {
+            doc.forEach((doc) => {
+                if (doc.exists) {
+                    this.types.push({
+                        id: doc.id,
+                        display_name: doc.data().display_name,
+                        name: doc.data().name,
+                        unit_configurable: doc.data().unit_configurable,
+                        units: doc.data().units,
+                    })
+                    // console.log(this.types[0].id, this.types[0].name)
+                }
+            });
         });
 
         challengeRef.get().then((doc) => {
             if (doc.exists) {
-                this.units = doc.data().units
+                this.type = doc.data().type
                 this.goal = parseInt(doc.data().goal)
+                this.hasEndDate = doc.data().hasEndDate
                 this.challenge_start = doc.data().start_date.toDate()
                 this.challenge_end = doc.data().end_date.toDate()
                 var today = new Date()
                 this.days_left = Math.floor((this.challenge_end - today) / (24 * 60 * 60 * 1000))
+                
                 var p = doc.data().participants
                 // console.log(p)
+                
+                for (var t in this.types) {
+                    if (this.types[t].id == this.type) {
+                        this.units = this.types[t].units
+                        if (this.types[t].unit_configurable) {
+                            this.unit_configurable = this.types[t].unit_configurable
+                        }
+                    }
+                }
+
                 for (var i in p) {
                     for (var j in this.users) {
                         var repCount = 0
@@ -266,7 +345,7 @@ export default {
 
 <style>
 #home {
-    background: url("../assets/KneeCrunches1.png") no-repeat center center fixed;;
+    background: url("../assets/vertical-climb.jpg") no-repeat center center fixed;
     background-size: cover;
     min-height: 100%;
     width: 100%;
@@ -279,7 +358,7 @@ export default {
     right: 0;
 }
 article.card {
-    background: rgb(240, 248, 255, 0.73);
+    background: rgb(240, 248, 255, 0.8);
 }
 .rep-input {
     margin: 10px 0 40px;
@@ -288,7 +367,7 @@ article.card {
     margin: 20px;
 }
 .list-group .list-group-item {
-    background: rgb(240, 248, 255, 0.73);
+    background: rgb(240, 248, 255, 0.8);
 }
 
 </style>
