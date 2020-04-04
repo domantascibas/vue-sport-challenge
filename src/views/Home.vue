@@ -12,7 +12,7 @@
                             <b-progress :value="user_workout_data.total_result" :max="challenge_info.goal" animated></b-progress>
                             <div class="rep-input">
                                 <b-input-group class="mt-3">
-                                    <b-form-input type="number" v-model="new_workout_entry"></b-form-input>
+                                    <b-form-input type="number" v-model="new_workout_entry" :placeholder="settings_info.units == 0 ? 'steps' : 'meters'"></b-form-input>
                                     <!-- :placeholder="settings_info.step_size_units" -->
                                     <b-input-group-append>
                                         <b-button @click="addWorkout()" variant="info">+ Add</b-button>
@@ -23,7 +23,6 @@
                             <!-- <p v-if="hasEndDate">You need {{ Math.floor((goal - repcount) / days_left)}} {{units}}/day to reach your goal!</p> -->
                             <!-- <p v-if="hasEndDate">Days left: {{ days_left }}</p> -->
                             <!-- <p v-if="unit_configurable">{{ units }} left: {{ ((goal - repcount) / (step_size / 100)).toFixed(2) }}</p> -->
-                            <!-- <p v-else>{{ units }} left: {{ goal - repcount }}</p> -->
                             <p>{{ settings_info.units == 0 ? 'steps' : 'meters' }} left: {{ settings_info.units == 1 ? challenge_info.goal - user_workout_data.total_result : settings_info.step_size_units == 0 ? ((challenge_info.goal - user_workout_data.total_result) * 1000 / settings_info.step_size).toFixed(2) : settings_info.step_size_units == 1 ? ((challenge_info.goal - user_workout_data.total_result) * 100 / settings_info.step_size).toFixed(2) : ((challenge_info.goal - user_workout_data.total_result) / settings_info.step_size).toFixed(2) }}</p>
 
                             <div class="step-size-input">
@@ -41,7 +40,6 @@
                                     </b-col>
                                 </b-input-group>
                             </div>
-                        <!-- Some quick example text to build on the card title and make up the bulk of the card's content. -->
 
                         </b-card-text>
                     </div>
@@ -477,13 +475,6 @@ export default {
         //     } else {
         //         fb.db.collection('users').doc(this.uid).update({'step_size': this.step_size})
         //     }
-        // },
-
-        // removeWorkout(index) {
-        //     this.repcount -= this.myWorkouts[index].reps
-        //     this.updateLeadeboard()
-        //     fb.db.collection("challenges").doc(this.currChallenge).collection("workouts").doc(this.myWorkouts[index].id).delete()
-        //     this.myWorkouts.splice(index, 1)
         // },
 
         // updateProfile() {
