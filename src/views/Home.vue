@@ -24,11 +24,12 @@
                             <!-- <p v-if="hasEndDate">Days left: {{ days_left }}</p> -->
                             <!-- <p v-if="unit_configurable">{{ units }} left: {{ ((goal - repcount) / (step_size / 100)).toFixed(2) }}</p> -->
                             <!-- <p v-else>{{ units }} left: {{ goal - repcount }}</p> -->
+                            <p>{{ challenge_info.units == 0 ? 'steps' : 'meters' }} left: {{ challenge_info.goal - user_workout_data.total_result }}</p>
 
                             <div class="step-size-input">
                                 <b-input-group class="mt-3">
                                     <b-col cols="4">
-                                        <p >Step size ({{ settings_info.step_size_units }}):</p>
+                                        <p >Step size ({{ settings_info.step_size_units == 0 ? 'mm' : settings_info.step_size_units == 1 ? 'cm' : 'm' }}):</p>
                                     </b-col>
                                     <b-col cols="4">
                                         <b-form-input type="number" placeholder="cm" v-model="settings_info.step_size"></b-form-input>
@@ -64,6 +65,22 @@
             </b-col>
         </b-row>
 
+        <b-row>
+            <b-col cols="12" md="5" class="list">
+                <h3>History</h3>
+                <b-list-group>
+                    <b-list-group-item
+                        v-for="(workout, index) in workouts"
+                        :key="workout.index">
+                        <p>{{ workout.date.toLocaleString('default', {month: 'short'})}} {{ workout.date.getDate() }} - <b>{{ workout.entry }} {{ challenge_info.units ? 'meters' : 'steps' }}:</b> {{ workout.steps }} * {{ workout.step_size }} {{ workout.step_size_units == 0 ? 'mm' : workout.step_size_units == 1 ? 'cm' : 'm' }}
+                            <svg class="bi bi-trash-fill" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg" @click="removeWorkout(index)">
+                            <path fill-rule="evenodd" d="M2.5 1a1 1 0 00-1 1v1a1 1 0 001 1H3v9a2 2 0 002 2h6a2 2 0 002-2V4h.5a1 1 0 001-1V2a1 1 0 00-1-1H10a1 1 0 00-1-1H7a1 1 0 00-1 1H2.5zm3 4a.5.5 0 01.5.5v7a.5.5 0 01-1 0v-7a.5.5 0 01.5-.5zM8 5a.5.5 0 01.5.5v7a.5.5 0 01-1 0v-7A.5.5 0 018 5zm3 .5a.5.5 0 00-1 0v7a.5.5 0 001 0v-7z" clip-rule="evenodd"/>
+                            </svg>
+                        </p>
+                    </b-list-group-item>
+                </b-list-group>
+            </b-col>
+        </b-row>
     </b-container>
 </div>
 </template>
@@ -94,6 +111,7 @@ export default {
     data: () => ({
         selected_challenge: "ZpmOZVpv2YJsI9e8ZpvJ",
         participants: [],
+        workouts: [],
         new_workout_entry: null,
 
         challenge_info: {
@@ -285,6 +303,19 @@ export default {
             });
         },
 
+        get_workouts() {
+            var workoutDataRef = fb.db.collection(USERS).doc(this.user_info.id).collection(CHALLENGES).doc(this.selected_challenge).collection(WORKOUTS)
+            workoutDataRef.get().then((doc) => {
+                doc.forEach((doc) => {
+                    if (doc.exists) {
+                        var temp_work = doc.data()
+                        temp_work.date = temp_work.date.toDate()
+                        this.workouts.push(temp_work)
+                    }
+                })
+            });
+        },
+
         get_type_data() {
             var typeDataRef = fb.db.collection(TYPES).doc(this.challenge_info.type)
             typeDataRef.get().then((doc) => {
@@ -440,6 +471,7 @@ export default {
         // Retrieve challenge info:
         this.get_challenge_data()
         this.get_participant_data()
+        this.get_workouts()
 
     // /* eslint-disable no-console */
     // // value = snapshot.val() | id = snapshot.key
