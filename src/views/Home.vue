@@ -218,9 +218,9 @@ export default {
             console.log('User Info')
             console.log('Name               :', this.user_info.name)
             console.log('ID                 :', this.user_info.id)
-            console.log('Total Result       :', this.user_info.total_result)
-            console.log('Last Workout       :', this.user_info.last_workout)
-            console.log('Biggest Workout    :', this.user_info.biggest_workout)
+            console.log('Total Result       :', this.user_workout_data.total_result)
+            console.log('Last Workout       :', this.user_workout_data.last_workout)
+            console.log('Biggest Workout    :', this.user_workout_data.biggest_workout)
         },
 
         get_user_data() {
@@ -246,24 +246,24 @@ export default {
             });
         },
 
+        get_user_settings() {
+            var userSettingsRef = fb.db.collection(USERS).doc(this.user_info.id).collection(SETTINGS).doc(this.selected_challenge)
+            userSettingsRef.get().then((doc) => {
+                if (doc.exists) {
+                    this.settings_info = doc.data()
+                }
+                this.print_user_settings()
+            });
+        },
+
         get_challenge_data() {
             var challengeDataRef = fb.db.collection(CHALLENGES).doc(this.selected_challenge)
             challengeDataRef.get().then((doc) =>{
                 if (doc.exists) {
-                    this.challenge_info = doc.data()
+                    this.challenge_info = doc.data()        
                     this.get_type_data()
                 }
                 this.print_data()
-            });
-        },
-
-        get_type_data() {
-            var typeDataRef = fb.db.collection(TYPES).doc(this.challenge_info.type)
-            typeDataRef.get().then((doc) => {
-                if (doc.exists) {
-                    this.type_info = doc.data()
-                }
-                this.print_type_data()
             });
         },
 
@@ -272,7 +272,7 @@ export default {
             participantsRef.get().then((doc) => {
                 doc.forEach((doc) => {
                     if (doc.exists) {
-                        var new_participant = doc.data()
+                        var new_participant = doc.data()                
                         new_participant.id = doc.id
                         this.participants.push(new_participant)
                     }
@@ -282,13 +282,13 @@ export default {
             });
         },
 
-        get_user_settings() {
-            var userSettingsRef = fb.db.collection(USERS).doc(this.user_info.id).collection(SETTINGS).doc(this.selected_challenge)
-            userSettingsRef.get().then((doc) => {
+        get_type_data() {
+            var typeDataRef = fb.db.collection(TYPES).doc(this.challenge_info.type)
+            typeDataRef.get().then((doc) => {
                 if (doc.exists) {
-                    this.settings_info = doc.data()
+                    this.type_info = doc.data()                    
                 }
-                this.print_user_settings()
+                this.print_type_data()
             });
         },
 
@@ -338,10 +338,6 @@ export default {
         //                 }
         //             }
         //         }
-        //         this.participants.sort((a, b) => (a.name < b.name) ? 1 : -1).sort((a, b) => (a.reps < b.reps) ? 1 : -1)
-        //         // for (var k in this.participants) {
-        //         //     console.log(this.participants[k].id, this.participants[k].name, this.participants[k].reps)
-        //         // }
         //     }
         // });
 
