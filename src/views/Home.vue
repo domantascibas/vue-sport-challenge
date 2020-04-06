@@ -10,36 +10,74 @@
                         <b-card-text>
                             <h1>{{ user_workout_data.total_result }} / {{ challenge_info.goal }}</h1>
                             <b-progress :value="user_workout_data.total_result" :max="challenge_info.goal" animated></b-progress>
+
+                            <div class="settings">
+                                <div class="text-left">
+                                    <b-button :class="settingsVisible ? null : 'collapsed'"
+                                    :aria-expanded="settingsVisible ? 'true' : 'false'"
+                                    aria-controls="settingsBox"
+                                    @click="settingsVisible = !settingsVisible"
+                                    variant="secondary" left>
+                                        <strong>Settings</strong>
+                                    </b-button>
+                                </div>
+
+                                <b-collapse id="settingsBox" class="mt-2" v-model="settingsVisible">
+                                    <b-card>
+                                        <b-row class="settings-units">
+                                            <b-col>
+                                                <p>Workouts units:</p>
+                                            </b-col>
+                                            <b-col>
+                                                <b-form-radio-group
+                                                v-model="settings_info.units"
+                                                :options="type_info.available_units"
+                                                disabled-field="notEnabled"
+                                                inline
+                                                ></b-form-radio-group>
+                                            </b-col>
+                                        </b-row>
+
+                                        <b-row class="settings-step-size" v-if="settings_info.units == 'steps'">
+                                            <b-col>
+                                                <p>Step size:</p>
+                                            </b-col>
+                                            <b-col>
+                                                <b-form-select v-model="settings_info.step_size_units" :options="type_info.step_size_units"></b-form-select>
+                                            </b-col>
+                                            <b-col>
+                                                <b-form-input type="number" v-model="settings_info.step_size" placeholder=""></b-form-input>
+                                            </b-col>
+                                        </b-row>
+
+                                        <b-row class="settings-save">
+                                            <b-col>
+                                                <b-button @click="saveSettings()" variant="info">Save</b-button>
+                                            </b-col>
+                                        </b-row>
+                                    </b-card>
+                                </b-collapse>
+                            </div>
+                            
                             <div class="rep-input">
                                 <b-input-group class="mt-3">
-                                    <b-form-input type="number" v-model="new_workout_entry" :placeholder="settings_info.units == 0 ? 'steps' : 'meters'"></b-form-input>
+                                    <b-form-input type="number" v-model="new_workout_entry" :placeholder="settings_info.units"></b-form-input>
                                     <!-- :placeholder="settings_info.step_size_units" -->
                                     <b-input-group-append>
                                         <b-button @click="addWorkout()" variant="info">+ Add</b-button>
                                     </b-input-group-append>
                                 </b-input-group>
                             </div>
-                            <p>Keep going {{ user_info.name }}!</p>
-                            <!-- <p v-if="hasEndDate">You need {{ Math.floor((goal - repcount) / days_left)}} {{units}}/day to reach your goal!</p> -->
-                            <!-- <p v-if="hasEndDate">Days left: {{ days_left }}</p> -->
-                            <!-- <p v-if="unit_configurable">{{ units }} left: {{ ((goal - repcount) / (step_size / 100)).toFixed(2) }}</p> -->
-                            <p>{{ settings_info.units == 0 ? 'steps' : 'meters' }} left: {{ settings_info.units == 1 ? challenge_info.goal - user_workout_data.total_result : settings_info.step_size_units == 0 ? ((challenge_info.goal - user_workout_data.total_result) * 1000 / settings_info.step_size).toFixed(2) : settings_info.step_size_units == 1 ? ((challenge_info.goal - user_workout_data.total_result) * 100 / settings_info.step_size).toFixed(2) : ((challenge_info.goal - user_workout_data.total_result) / settings_info.step_size).toFixed(2) }}</p>
 
-                            <div class="step-size-input">
-                                <b-input-group class="mt-3">
-                                    <b-col cols="4">
-                                        <p >Step size ({{ settings_info.step_size_units == 0 ? 'mm' : settings_info.step_size_units == 1 ? 'cm' : 'm' }}):</p>
-                                    </b-col>
-                                    <b-col cols="4">
-                                        <b-form-input type="number" placeholder="cm" v-model="settings_info.step_size"></b-form-input>
-                                    </b-col>
-                                    <b-col cols="4">
-                                        <b-input-group-append>
-                                            <b-button @click="saveSettings()" variant="info">Save</b-button>
-                                        </b-input-group-append>
-                                    </b-col>
-                                </b-input-group>
-                            </div>
+                            <b-row>
+                                <b-col>
+                                    <p>Keep going {{ user_info.name }}!</p>
+                                    <!-- <p v-if="hasEndDate">You need {{ Math.floor((goal - repcount) / days_left)}} {{units}}/day to reach your goal!</p> -->
+                                    <!-- <p v-if="hasEndDate">Days left: {{ days_left }}</p> -->
+                                    <!-- <p v-if="unit_configurable">{{ units }} left: {{ ((goal - repcount) / (step_size / 100)).toFixed(2) }}</p> -->
+                                    <p>{{ settings_info.units }} left: {{ settings_info.units == 'meters' ? challenge_info.goal - user_workout_data.total_result : settings_info.step_size_units == 'mm' ? ((challenge_info.goal - user_workout_data.total_result) * 1000 / settings_info.step_size).toFixed(2) : settings_info.step_size_units == 'cm' ? ((challenge_info.goal - user_workout_data.total_result) * 100 / settings_info.step_size).toFixed(2) : ((challenge_info.goal - user_workout_data.total_result) / settings_info.step_size).toFixed(2) }}</p>
+                                </b-col>
+                            </b-row>
 
                         </b-card-text>
                     </div>
@@ -70,7 +108,7 @@
                     <b-list-group-item
                         v-for="(workout, index) in workouts"
                         :key="workout.index">
-                        <p>{{ workout.date.toLocaleString('default', {month: 'short'})}} {{ workout.date.getDate() }} - <b>{{ workout.entry }} {{ challenge_info.units ? 'meters' : 'steps' }}:</b> {{ workout.steps }} * {{ workout.step_size }} {{ workout.step_size_units == 0 ? 'mm' : workout.step_size_units == 1 ? 'cm' : 'm' }}
+                        <p>{{ workout.date.toLocaleString('default', {month: 'short'})}} {{ workout.date.getDate() }} - <b>{{ workout.entry }} {{ challenge_info.units ? 'meters' : 'steps' }}</b><span v-if="workout.steps != 0">: {{ workout.steps }} * {{ workout.step_size }} {{ workout.step_size_units }}</span>
                             <svg class="bi bi-trash-fill" width="1em" height="1em" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg" @click="removeWorkout(index)">
                             <path fill-rule="evenodd" d="M2.5 1a1 1 0 00-1 1v1a1 1 0 001 1H3v9a2 2 0 002 2h6a2 2 0 002-2V4h.5a1 1 0 001-1V2a1 1 0 00-1-1H10a1 1 0 00-1-1H7a1 1 0 00-1 1H2.5zm3 4a.5.5 0 01.5.5v7a.5.5 0 01-1 0v-7a.5.5 0 01.5-.5zM8 5a.5.5 0 01.5.5v7a.5.5 0 01-1 0v-7A.5.5 0 018 5zm3 .5a.5.5 0 00-1 0v7a.5.5 0 001 0v-7z" clip-rule="evenodd"/>
                             </svg>
@@ -111,6 +149,7 @@ export default {
         participants: [],
         workouts: [],
         new_workout_entry: null,
+        settingsVisible: null,
 
         challenge_info: {
             name: "New Challenge",
@@ -132,8 +171,8 @@ export default {
 
         settings_info: {
             // other available settings are retrieved from type info
-            units: 0,               // selection from available units: steps / meters
-            step_size_units: 0,     // selection from available units: mm / cm / m
+            units: 'steps',               // selection from available units: steps / meters
+            step_size_units: 'cm',     // selection from available units: mm / cm / m
             step_size: 0
         },
 
@@ -341,13 +380,13 @@ export default {
         },
 
         convertSteps(units, size, steps) {
-            if (units == 0) {
+            if (units == 'mm') {
                 return parseFloat((size / 1000 * steps).toFixed(2))
             }
-            if (units == 1) {
+            if (units == 'cm') {
                 return parseFloat((size / 100 * steps).toFixed(2))
             }
-            if (units == 2) {
+            if (units == 'm') {
                 return parseFloat((size * steps).toFixed(2))
             }
         },
@@ -357,25 +396,28 @@ export default {
             if (this.new_workout_entry == null || this.new_workout_entry == 0) {
                 alert("Empty workout!")
             } else {
+                this.new_workout_entry = parseFloat(this.new_workout_entry)
+                this.settings_info.step_size = parseFloat(this.settings_info.step_size)
+                
                 var newEntry = {
                     date: new Date(),
                     steps: 0,
                     step_size: 0,
                     step_size_units: 0,
-                    entry: 0
+                    entry: 0,
+                    units: this.settings_info.units
                 }
 
-                if (this.challenge_info.units == 0) {
-                    newEntry.steps = this.new_workout_entry
-                } else if (this.challenge_info.units == 1){
+                if (this.settings_info.units == 'meters') {
+                    newEntry.entry = this.new_workout_entry
+                } else if (this.settings_info.units == 'steps'){
                     newEntry.steps = this.new_workout_entry
                     newEntry.step_size = this.settings_info.step_size
                     newEntry.step_size_units = this.settings_info.step_size_units
                     newEntry.entry = this.convertSteps(newEntry.step_size_units, newEntry.step_size, newEntry.steps)
                 }
-
                 this.new_workout_entry = null
-                
+                console.log("entry:", newEntry)
                 this.saveEntry(newEntry)
             }
         },
@@ -451,7 +493,7 @@ export default {
                     }
                 }
                 that.sort_leaderboard()
-                // console.log("Transaction successfully committed!");
+                console.log("Transaction successfully committed!");
             }).catch(function(error) {
                 console.log("Transaction failed: ", error);
             });
@@ -461,7 +503,8 @@ export default {
             if (this.settings_info.step_size == "" || this.settings_info.step_size == 0) {
                 alert("Step size can't be zero")
             } else {
-                fb.db.collection(USERS).doc(this.user_info.id).collection(SETTINGS).doc(this.selected_challenge).update({ step_size : this.settings_info.step_size })
+                fb.db.collection(USERS).doc(this.user_info.id).collection(SETTINGS).doc(this.selected_challenge).set(this.settings_info)
+                this.settingsVisible = false
             }
         }
 
@@ -545,6 +588,14 @@ export default {
 article.card {
     background: rgb(240, 248, 255, 0.8);
 }
+.settings {
+    margin-top: 20px;
+}
+
+.settings-save {
+    margin-top: 20px;
+}
+
 .rep-input {
     margin: 10px 0 40px;
 }
