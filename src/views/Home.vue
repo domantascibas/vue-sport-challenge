@@ -222,64 +222,64 @@ export default {
             })
         },
 
-        print_data() {
-            console.log('')
-            console.log('Challenge Info')
-            console.log('Name          :', this.challenge_info.name)
-            console.log('Start         :', this.challenge_info.start_date)
-            console.log('End           :', this.challenge_info.end_date)
-            console.log('Goal          :', this.challenge_info.goal)
-            console.log('Type          :', this.challenge_info.type)
-            console.log('Units         :', this.challenge_info.units)
-            console.log('has end date  :', this.challenge_info.has_end_date)
-            console.log('has ended     :', this.challenge_info.has_ended)
-            console.log('is private    :', this.challenge_info.is_private)
-        },
+        // print_data() {
+        //     console.log('')
+        //     console.log('Challenge Info')
+        //     console.log('Name          :', this.challenge_info.name)
+        //     console.log('Start         :', this.challenge_info.start_date)
+        //     console.log('End           :', this.challenge_info.end_date)
+        //     console.log('Goal          :', this.challenge_info.goal)
+        //     console.log('Type          :', this.challenge_info.type)
+        //     console.log('Units         :', this.challenge_info.units)
+        //     console.log('has end date  :', this.challenge_info.has_end_date)
+        //     console.log('has ended     :', this.challenge_info.has_ended)
+        //     console.log('is private    :', this.challenge_info.is_private)
+        // },
 
-        print_participants() {
-            console.log('')
-            console.log('Participants')
-            for (var p in this.participants) {
-                console.log('#'+p)
-                console.log('Name       :', this.participants[p].name)
-                console.log('ID         :', this.participants[p].id)
-                console.log('Result     :', this.participants[p].total_result)
-                console.log('is admin   :', this.participants[p].is_admin)
-                console.log('is visible :', this.participants[p].is_visible)
-            }
-        },
+        // print_participants() {
+        //     console.log('')
+        //     console.log('Participants')
+        //     for (var p in this.participants) {
+        //         console.log('#'+p)
+        //         console.log('Name       :', this.participants[p].name)
+        //         console.log('ID         :', this.participants[p].id)
+        //         console.log('Result     :', this.participants[p].total_result)
+        //         console.log('is admin   :', this.participants[p].is_admin)
+        //         console.log('is visible :', this.participants[p].is_visible)
+        //     }
+        // },
 
-        print_type_data() {
-            console.log('')
-            console.log('Type info')
-            console.log('Name               :', this.type_info.name)
-            console.log('Available Units')
-            for (var i in this.type_info.available_units) {
-                console.log('Size unit          :', this.type_info.available_units[i])
-            }
-            console.log('Available Step Size Units')
-            for (var j in this.type_info.step_size_units) {
-                console.log('Step size unit     :', this.type_info.step_size_units[j])
-            }
-        },
+        // print_type_data() {
+        //     console.log('')
+        //     console.log('Type info')
+        //     console.log('Name               :', this.type_info.name)
+        //     console.log('Available Units')
+        //     for (var i in this.type_info.available_units) {
+        //         console.log('Size unit          :', this.type_info.available_units[i])
+        //     }
+        //     console.log('Available Step Size Units')
+        //     for (var j in this.type_info.step_size_units) {
+        //         console.log('Step size unit     :', this.type_info.step_size_units[j])
+        //     }
+        // },
 
-        print_user_settings() {
-            console.log('')
-            console.log('User Settings')
-            console.log('Units              :', this.settings_info.units)
-            console.log('Step Size Units    :', this.settings_info.step_size_units)
-            console.log('Step Size          :', this.settings_info.step_size)
-        },
+        // print_user_settings() {
+        //     console.log('')
+        //     console.log('User Settings')
+        //     console.log('Units              :', this.settings_info.units)
+        //     console.log('Step Size Units    :', this.settings_info.step_size_units)
+        //     console.log('Step Size          :', this.settings_info.step_size)
+        // },
 
-        print_user_data() {
-            console.log('')
-            console.log('User Info')
-            console.log('Name               :', this.user_info.name)
-            console.log('ID                 :', this.user_info.id)
-            console.log('Total Result       :', this.user_workout_data.total_result)
-            console.log('Last Workout       :', this.user_workout_data.last_workout)
-            console.log('Biggest Workout    :', this.user_workout_data.biggest_workout)
-        },
+        // print_user_data() {
+        //     console.log('')
+        //     console.log('User Info')
+        //     console.log('Name               :', this.user_info.name)
+        //     console.log('ID                 :', this.user_info.id)
+        //     console.log('Total Result       :', this.user_workout_data.total_result)
+        //     console.log('Last Workout       :', this.user_workout_data.last_workout)
+        //     console.log('Biggest Workout    :', this.user_workout_data.biggest_workout)
+        // },
 
         get_user_data() {
             var user = firebase.auth().currentUser;
@@ -300,7 +300,7 @@ export default {
                 if (doc.exists) {
                     this.user_workout_data = doc.data()
                 }
-                this.print_user_data()
+                // this.print_user_data()
             });
         },
 
@@ -310,7 +310,7 @@ export default {
                 if (doc.exists) {
                     this.settings_info = doc.data()
                 }
-                this.print_user_settings()
+                // this.print_user_settings()
             });
         },
 
@@ -321,7 +321,7 @@ export default {
                     this.challenge_info = doc.data()        
                     this.get_type_data()
                 }
-                this.print_data()
+                // this.print_data()
             });
         },
 
@@ -336,7 +336,7 @@ export default {
                     }
                 })
                 this.sort_leaderboard()
-                this.print_participants()
+                // this.print_participants()
             });
         },
 
@@ -355,7 +355,7 @@ export default {
                 })
                 this.sort_history()
                 if (entryCount != this.user_workout_data.total_result) {
-                    console.log("entry count mismatch", entryCount, this.user_workout_data.total_result)
+                    // console.log("entry count mismatch", entryCount, this.user_workout_data.total_result)
                     this.updateTotalResult(entryCount, 0)
                 }
             });
@@ -367,7 +367,7 @@ export default {
                 if (doc.exists) {
                     this.type_info = doc.data()                    
                 }
-                this.print_type_data()
+                // this.print_type_data()
             });
         },
 
@@ -417,14 +417,14 @@ export default {
                     newEntry.entry = this.convertSteps(newEntry.step_size_units, newEntry.step_size, newEntry.steps)
                 }
                 this.new_workout_entry = null
-                console.log("entry:", newEntry)
+                // console.log("entry:", newEntry)
                 this.saveEntry(newEntry)
             }
         },
 
         removeWorkout(index) {
             var wk_info = this.workouts[index]
-            console.log("remove workout", index, wk_info)
+            // console.log("remove workout", index, wk_info)
             this.deleteEntry(wk_info, index)
             return index
         },
@@ -449,9 +449,9 @@ export default {
                 that.updateTotalResult(entry.entry, -1)
                 that.workouts.splice(index, 1)
                 that.sort_history()
-                console.log("Document successfully deleted!");
-            }).catch(function(error) {
-                console.error("Error removing document: ", error);
+            //     console.log("Document successfully deleted!");
+            // }).catch(function(error) {
+            //     console.error("Error removing document: ", error);
             });
         },
 
@@ -493,9 +493,9 @@ export default {
                     }
                 }
                 that.sort_leaderboard()
-                console.log("Transaction successfully committed!");
-            }).catch(function(error) {
-                console.log("Transaction failed: ", error);
+            //     console.log("Transaction successfully committed!");
+            // }).catch(function(error) {
+            //     console.log("Transaction failed: ", error);
             });
         },
 
